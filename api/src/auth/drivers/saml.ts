@@ -20,7 +20,6 @@ import type { AuthDriverOptions, User } from '../../types/index.js';
 import asyncHandler from '../../utils/async-handler.js';
 import { getConfigFromEnv } from '../../utils/get-config-from-env.js';
 import { getSchema } from '../../utils/get-schema.js';
-import { checkSsoEnabled } from '../utils/check-sso-enabled.js';
 import { resolveLoginRedirect } from '../utils/resolve-login-redirect.js';
 import { LocalAuthDriver } from './local.js';
 
@@ -118,8 +117,6 @@ export class SAMLAuthDriver extends LocalAuthDriver {
 export function createSAMLAuthRouter(providerName: string) {
 	const router = Router();
 	const env = useEnv();
-
-	router.use(checkSsoEnabled);
 
 	router.get(
 		'/metadata',

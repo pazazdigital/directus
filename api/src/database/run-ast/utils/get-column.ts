@@ -17,9 +17,7 @@ type OriginalCollectionName = {
 	originalCollectionName?: string | undefined;
 };
 
-type GetColumnOptions = (OriginalCollectionName | (FunctionColumnOptions & OriginalCollectionName)) & {
-	jsonReturnType?: 'text' | 'numeric' | undefined;
-};
+type GetColumnOptions = OriginalCollectionName | (FunctionColumnOptions & OriginalCollectionName);
 
 /**
  * Return column prefixed by table. If column includes functions (like `year(date_created)`), the
@@ -79,7 +77,6 @@ export function getColumn(
 					: undefined,
 				originalCollectionName: options?.originalCollectionName,
 				jsonPath,
-				...(options?.jsonReturnType && { jsonReturnType: options.jsonReturnType }),
 			}) as Knex.Raw;
 
 			if (alias) {

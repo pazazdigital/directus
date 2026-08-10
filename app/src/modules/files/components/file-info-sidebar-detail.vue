@@ -4,6 +4,7 @@ import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { RouterLink } from 'vue-router';
 import api from '@/api';
+import VButton from '@/components/v-button.vue';
 import VDivider from '@/components/v-divider.vue';
 import VIcon from '@/components/v-icon/v-icon.vue';
 import { useClipboard } from '@/composables/use-clipboard';
@@ -67,7 +68,7 @@ const imageMetadata = computed(() => {
 
 	const { ifd0, exif } = metadata;
 
-	const result = {
+	return {
 		Make: ifd0?.Make,
 		Model: ifd0?.Model,
 		FNumber: exif?.FNumber,
@@ -75,10 +76,6 @@ const imageMetadata = computed(() => {
 		FocalLength: exif?.FocalLength,
 		ISO: exif?.ISO ?? exif?.ISOSpeedRatings,
 	};
-
-	if (Object.values(result).every((v) => v === undefined)) return;
-
-	return result;
 });
 
 function useUser() {
@@ -286,7 +283,9 @@ async function copyFileId() {
 			<div v-if="file?.id" class="copy-id">
 				<dt>{{ $t('copy_id') }}</dt>
 				<dd>
-					<VIcon small name="content_copy" clickable class="copy-id-icon" @click="copyFileId" />
+					<VButton icon secondary small class="copy-id-button" @click="copyFileId">
+						<VIcon small name="content_copy" outline />
+					</VButton>
 				</dd>
 			</div>
 
@@ -335,9 +334,9 @@ button {
 	display: flex;
 	align-items: flex-start;
 
-	.copy-id-icon {
-		--v-icon-color: var(--theme--foreground-subdued);
-		--v-icon-color-hover: var(--theme--foreground);
+	:deep(.button) {
+		block-size: auto;
+		inline-size: auto;
 	}
 }
 </style>

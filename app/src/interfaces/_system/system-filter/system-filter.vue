@@ -9,7 +9,7 @@ import {
 import { cloneDeep, get, isEmpty, set } from 'lodash';
 import { computed, inject, ref } from 'vue';
 import Nodes from './Nodes.vue';
-import { buildJsonFilter, getNodeName } from './utils';
+import { getNodeName } from './utils';
 import VDivider from '@/components/v-divider.vue';
 import VFieldList from '@/components/v-field-list/v-field-list.vue';
 import VIcon from '@/components/v-icon/v-icon.vue';
@@ -21,7 +21,6 @@ import VNotice from '@/components/v-notice.vue';
 import VTextOverflow from '@/components/v-text-overflow.vue';
 import { useFieldsStore } from '@/stores/fields';
 import { useRelationsStore } from '@/stores/relations';
-import { extractFieldFromFunction } from '@/utils/extract-field-from-function';
 
 interface Props {
 	value?: Record<string, any> | string;
@@ -38,11 +37,6 @@ interface Props {
 	inline?: boolean;
 	includeValidation?: boolean;
 	includeRelations?: boolean;
-	/**
-	 * Allow creating `_json` filter nodes. Forced off when includeValidation is set, as the
-	 * validation/conditions rule engine (generate-joi) does not support the `_json` operator.
-	 */
-	includeJsonFunction?: boolean;
 	injectVersionField?: boolean;
 	relationalFieldSelectable?: boolean;
 	rawFieldNames?: boolean;
@@ -59,7 +53,6 @@ const props = withDefaults(defineProps<Props>(), {
 	inline: false,
 	includeValidation: false,
 	includeRelations: true,
-	includeJsonFunction: true,
 	injectVersionField: false,
 	relationalFieldSelectable: true,
 	rawFieldNames: false,
@@ -78,8 +71,6 @@ const collection = computed(() => {
 
 const fieldsStore = useFieldsStore();
 const relationsStore = useRelationsStore();
-
-const jsonFunctionEnabled = computed(() => props.includeJsonFunction && !props.includeValidation);
 
 const innerValue = computed<Filter[]>({
 	get() {
@@ -116,16 +107,6 @@ function addNode(key: string) {
 	if (key === '$group') {
 		innerValue.value = innerValue.value.concat({ _and: [] });
 	} else {
-		const functionInfo = extractFieldFromFunction(key);
-
-		if (functionInfo.fn === 'json') {
-			// getOutputTypeForFunction has no mapping for "json", so there is no generic fallback
-			if (!jsonFunctionEnabled.value) return;
-
-			innerValue.value = innerValue.value.concat(buildJsonFilter(functionInfo.field, '', '_eq', null));
-			return;
-		}
-
 		let type: Type;
 		const field = fieldsStore.getField(collection.value, key);
 		const isVersion = key === '$version';
@@ -149,9 +130,7 @@ function addNode(key: string) {
 			}
 		}
 
-		const filterOperators = getFilterOperatorsForType(type, { includeValidation: props.includeValidation }).filter(
-			(operator) => operator !== 'json',
-		);
+		const filterOperators = getFilterOperatorsForType(type, { includeValidation: props.includeValidation });
 
 		const operator =
 			isVersion || (field?.meta?.options?.choices && filterOperators.includes('eq')) ? 'eq' : filterOperators[0];
@@ -211,7 +190,6 @@ function addKeyAsNode() {
 				:field="fieldName"
 				:depth="1"
 				:include-validation="includeValidation"
-				:include-json-function="jsonFunctionEnabled"
 				:include-relations="includeRelations"
 				:relational-field-selectable="relationalFieldSelectable"
 				:raw-field-names="rawFieldNames"
@@ -226,20 +204,18 @@ function addKeyAsNode() {
 			<button @click="addNode('$group')">{{ $t('interfaces.filter.add_group') }}</button>
 		</div>
 		<div v-else class="buttons">
-			<VMenu ref="menuEl" placement="bottom-start" show-arrow :attached="inline">
+			<VMenu ref="menuEl" placement="bottom-start" show-arrow>
 				<template #activator="{ toggle, active }">
 					<button class="add-filter" :class="{ active }" @click="toggle">
 						<VIcon v-if="inline" name="add" class="add" small />
 						<span>{{ $t('interfaces.filter.add_filter') }}</span>
-						<VIcon name="arrow_drop_down" class="expand_more" />
+						<VIcon name="expand_more" class="expand_more" />
 					</button>
 				</template>
 				<VFieldList
 					v-if="collectionRequired"
-					:attached="inline"
 					:collection="collection"
 					include-functions
-					:excluded-functions="jsonFunctionEnabled ? [] : ['json']"
 					:include-relations="includeRelations"
 					:relational-field-selectable="relationalFieldSelectable"
 					:inject-version-field="injectVersionField"
@@ -362,18 +338,22 @@ function addKeyAsNode() {
 			border: var(--theme--border-width) solid var(--theme--border-color-subdued);
 			border-radius: 5.625rem;
 			transition: border-color var(--fast) var(--transition);
-
 			&:hover,
 			&.active {
 				border-color: var(--theme--form--field--input--border-color);
 			}
-
+			&.active {
+				.expand_more {
+					transform: scaleY(-1);
+					transition-timing-function: var(--transition-in);
+				}
+			}
 			.add {
 				margin-inline: 0.3125rem 0.25rem;
 			}
-
 			.expand_more {
 				margin-inline: auto 0.3125rem;
+				transition: transform var(--medium) var(--transition-out);
 			}
 		}
 	}

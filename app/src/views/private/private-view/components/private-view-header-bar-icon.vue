@@ -1,39 +1,53 @@
 <script lang="ts" setup>
-import { useRouter } from 'vue-router';
-import PrivateViewHeaderBarActionButton from './private-view-header-bar-action-button.vue';
+import VButton from '@/components/v-button.vue';
 import VIcon from '@/components/v-icon/v-icon.vue';
 
-const props = defineProps<{
+defineProps<{
 	icon?: string;
 	iconColor?: string;
+	showBack?: boolean;
 	backTo?: string;
-	back?: boolean;
 }>();
-
-const router = useRouter();
-
-function onBackClick() {
-	// When no explicit target is given, fall back to browser history (returns to the parent
-	// item / previous in-app page). When backTo is set, the router-link handles navigation.
-	if (props.backTo === undefined) router.back();
-}
 </script>
 
 <template>
-	<PrivateViewHeaderBarActionButton
-		v-if="back"
+	<VButton
+		v-if="showBack"
 		class="back-button"
-		variant="ghost"
-		icon="arrow_back"
+		rounded
+		icon
+		secondary
+		exact
+		small
 		:to="backTo"
-		@click="onBackClick"
-	/>
+		@click="!backTo ? $router.back() : undefined"
+	>
+		<VIcon name="arrow_back" small />
+	</VButton>
 
-	<VIcon v-else-if="icon" :name="icon" :color="iconColor" class="icon-only" />
+	<div v-else-if="icon" class="icon">
+		<VIcon :name="icon" :color="iconColor" small />
+	</div>
 </template>
 
 <style scoped>
-.icon-only {
-	--v-icon-color: var(--theme--primary);
+.back-button,
+.icon {
+	flex-shrink: 0;
+}
+
+.back-button {
+	--v-button-background-color: var(--theme--background-normal);
+	--v-button-color-active: var(--theme--foreground);
+}
+
+.icon {
+	inline-size: 2rem;
+	block-size: 2rem;
+	border-radius: 2rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background-color: var(--theme--background-normal);
 }
 </style>

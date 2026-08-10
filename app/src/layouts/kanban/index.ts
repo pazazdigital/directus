@@ -12,7 +12,6 @@ import type { ChangeEvent, Group, Item, LayoutOptions, LayoutQuery } from './typ
 import { useAiToolsStore } from '@/ai/stores/use-ai-tools';
 import api from '@/api';
 import { useLayoutClickHandler } from '@/composables/use-layout-click-handler';
-import { useVersionQuery } from '@/composables/use-version-query';
 import { usePermissionsStore } from '@/stores/permissions';
 import { useRelationsStore } from '@/stores/relations';
 import { useServerStore } from '@/stores/server';
@@ -27,6 +26,8 @@ export default defineLayout<LayoutOptions, LayoutQuery>({
 	name: '$t:layouts.kanban.name',
 	icon: 'view_week',
 	component: KanbanLayout,
+	headerShadow: false,
+	sidebarShadow: false,
 	slots: {
 		options: KanbanOptions,
 		sidebar: () => undefined,
@@ -56,10 +57,7 @@ export default defineLayout<LayoutOptions, LayoutQuery>({
 
 		const { sort, limit, page, fields } = useLayoutQuery();
 
-		const routeVersionKey = useVersionQuery();
-		const versionKey = computed(() => (props.selectMode ? null : routeVersionKey.value));
-
-		const { onClick } = useLayoutClickHandler({ props, selection, primaryKeyField, versionKey });
+		const { onClick } = useLayoutClickHandler({ props, selection, primaryKeyField });
 
 		const { fieldGroups } = useFilterFields(fieldsInCollection, {
 			title: (field) => field.type === 'string' || fieldIsRelatedField(field),
@@ -163,7 +161,6 @@ export default defineLayout<LayoutOptions, LayoutQuery>({
 			filter,
 			search,
 			filterSystem,
-			version: versionKey,
 		});
 
 		watch(ungroupedDisabled, (disabled) => {
@@ -396,8 +393,8 @@ export default defineLayout<LayoutOptions, LayoutQuery>({
 
 		function refresh() {
 			getItems();
-			getTotalCount(true);
-			getItemCount(true);
+			getTotalCount();
+			getItemCount();
 			// potentially reload the related group items, if the group field is relational
 			if (isRelational.value) getGroups();
 		}

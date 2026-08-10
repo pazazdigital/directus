@@ -155,6 +155,8 @@ const icon = computed(() => {
 
 	&:focus-visible {
 		opacity: 1;
+		outline: 2px solid var(--theme--primary);
+		outline-offset: 1px;
 	}
 }
 </style>

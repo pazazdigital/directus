@@ -1,5 +1,4 @@
 import { useCollection, useItems, useSync } from '@directus/composables';
-import { isPublishedVersionKey } from '@directus/constants';
 import { defineLayout } from '@directus/extensions';
 import { getFieldsFromTemplate } from '@directus/utils';
 import { clone } from 'lodash';
@@ -10,11 +9,10 @@ import CardsLayout from './cards.vue';
 import CardsOptions from './options.vue';
 import { LayoutOptions, LayoutQuery } from './types';
 import { useAiToolsStore } from '@/ai/stores/use-ai-tools';
-import { useLayoutClickHandler } from '@/composables/use-layout-click-handler';
-import { useVersionQuery } from '@/composables/use-version-query';
 import { useRelationsStore } from '@/stores/relations';
 import { adjustFieldsForDisplays } from '@/utils/adjust-fields-for-displays';
 import { formatItemsCountPaginated } from '@/utils/format-items-count';
+import { getItemRoute } from '@/utils/get-route';
 import { saveAsCSV } from '@/utils/save-as-csv';
 import { syncRefProperty } from '@/utils/sync-ref-property';
 
@@ -23,6 +21,7 @@ export default defineLayout<LayoutOptions, LayoutQuery>({
 	name: '$t:layouts.cards.cards',
 	icon: 'grid_view',
 	component: CardsLayout,
+	headerShadow: false,
 	slots: {
 		options: CardsOptions,
 		sidebar: () => undefined,
@@ -46,12 +45,7 @@ export default defineLayout<LayoutOptions, LayoutQuery>({
 
 		const { collection, filter, search, filterSystem, filterUser } = toRefs(props);
 
-		const routeVersionKey = useVersionQuery();
-		const versionKey = computed(() => (props.selectMode ? null : routeVersionKey.value));
-
 		const { info, primaryKeyField, fields: fieldsInCollection } = useCollection(collection);
-
-		const { onClick } = useLayoutClickHandler({ props, selection, primaryKeyField, versionKey });
 
 		const fileFields = computed(() => {
 			return fieldsInCollection.value.filter((field) => {
@@ -91,18 +85,6 @@ export default defineLayout<LayoutOptions, LayoutQuery>({
 			filter,
 			search,
 			filterSystem,
-			version: versionKey,
-		});
-
-		const isVersion = computed(() => !!versionKey.value && !isPublishedVersionKey(versionKey.value));
-
-		const itemsOrVersions = computed(() => {
-			if (!isVersion.value) return items.value;
-
-			return items.value.map((item: Record<string, any>) => ({
-				...item,
-				_versionId: item.$meta?.version_id ?? null,
-			}));
 		});
 
 		const showingCount = computed(() => {
@@ -127,7 +109,7 @@ export default defineLayout<LayoutOptions, LayoutQuery>({
 		});
 
 		return {
-			items: itemsOrVersions,
+			items,
 			loading,
 			loadingItemCount,
 			error,
@@ -145,7 +127,7 @@ export default defineLayout<LayoutOptions, LayoutQuery>({
 			imageSource,
 			title,
 			subtitle,
-			onClick,
+			getLinkForItem,
 			imageFit,
 			sort,
 			info,
@@ -158,7 +140,6 @@ export default defineLayout<LayoutOptions, LayoutQuery>({
 			filterUser,
 			search,
 			download,
-			versionKey,
 		};
 
 		async function resetPresetAndRefresh() {
@@ -168,8 +149,8 @@ export default defineLayout<LayoutOptions, LayoutQuery>({
 
 		function refresh() {
 			getItems();
-			getTotalCount(true);
-			getItemCount(true);
+			getTotalCount();
+			getItemCount();
 		}
 
 		function download() {
@@ -245,13 +226,13 @@ export default defineLayout<LayoutOptions, LayoutQuery>({
 			return { sort, limit, page, fields };
 		}
 
+		function getLinkForItem(item: Record<string, any>) {
+			if (!primaryKeyField.value) return;
+
+			return getItemRoute(props.collection, item[primaryKeyField.value.field]);
+		}
+
 		function selectAll() {
-			if (isVersion.value) {
-				selection.value = items.value.map((item) => item.$meta?.version_id).filter((id): id is string => !!id);
-
-				return;
-			}
-
 			if (!primaryKeyField.value) return;
 			const pk = primaryKeyField.value;
 			selection.value = clone(items.value).map((item) => item[pk.field]);

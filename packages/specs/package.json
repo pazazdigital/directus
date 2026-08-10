@@ -1,15 +1,15 @@
 {
 	"name": "@directus/specs",
-	"version": "15.0.0",
+	"version": "13.0.0",
 	"description": "OpenAPI Specification of the Directus API",
-	"homepage": "https://directus.com",
+	"homepage": "https://directus.io",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/directus/directus.git",
 		"directory": "packages/specs"
 	},
 	"funding": "https://github.com/directus/directus?sponsor=1",
-	"license": "SEE LICENSE IN license",
+	"license": "BUSL-1.1",
 	"author": "Nils Twelker",
 	"type": "module",
 	"exports": {

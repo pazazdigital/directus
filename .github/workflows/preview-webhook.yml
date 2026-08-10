@@ -1,18 +1,21 @@
 name: Preview Deployment
 
 on:
-  pull_request:
+  pull_request_target:
     types: [labeled, synchronize]
 
-permissions: {}
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  EXPIRATION_HOURS: 2
 
 jobs:
   preview-labeled:
-    if: >
-      github.event.pull_request.head.repo.full_name == github.repository && (
-        (github.event.action == 'labeled' && github.event.label.name == 'Preview') ||
-        (github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'Preview'))
-      )
+    if:
+      (github.event.action == 'labeled' && github.event.label.name == 'Preview') || (github.event.action ==
+      'synchronize' && contains(github.event.pull_request.labels.*.name, 'Preview'))
     runs-on: ubuntu-latest
     timeout-minutes: 5
     concurrency:

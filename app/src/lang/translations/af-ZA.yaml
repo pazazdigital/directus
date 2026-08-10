@@ -116,8 +116,6 @@ wysiwyg_options:
   codeblock: Kode
   table: Tafel
 choices: Keuses
-licensing:
-  resolve_sso_admin_password: Wagwoord
 settings_presets: Boekmerke
 add_new: Voeg nuwe
 all: Alle
@@ -137,7 +135,6 @@ fields:
     ip: IP Adres
   directus_collections:
     collection: Versameling
-    status: Status
   directus_files:
     title: Titel
     description: Beskrywing

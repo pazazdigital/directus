@@ -4,6 +4,7 @@ get:
   operationId: getContentVersion
   parameters:
     - $ref: '../../openapi.yaml#/components/parameters/Fields'
+    - $ref: '../../openapi.yaml#/components/parameters/Meta'
   responses:
     '200':
       description: Successful request
@@ -27,6 +28,7 @@ patch:
   operationId: updateContentVersion
   parameters:
     - $ref: '../../openapi.yaml#/components/parameters/Fields'
+    - $ref: '../../openapi.yaml#/components/parameters/Meta'
   requestBody:
     content:
       application/json:

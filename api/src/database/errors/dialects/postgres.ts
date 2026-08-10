@@ -52,23 +52,13 @@ export function extractError(error: PostgresError, data: Partial<Item>): Postgre
 	}
 
 	function numericValueOutOfRange() {
-		/**
-		 * NOTE:
-		 * PostgreSQL does not return the offending column, and we cannot reliably
-		 * infer it.
-		 *
-		 * When a single field is provided, the error must be from it.
-		 * For multi-field inserts, attribution would be speculative, and therefor omit it
-		 */
-
 		const regex = /"(.*?)"/g;
 		const matches = error.message.match(regex);
 
 		if (!matches) return error;
 
 		const collection = matches[0].slice(1, -1);
-		const fields = Object.keys(data);
-		const field = fields.length === 1 ? fields[0]! : null;
+		const field = matches[1]?.slice(1, -1) ?? null;
 
 		return new ValueOutOfRangeError({
 			collection,
@@ -80,11 +70,7 @@ export function extractError(error: PostgresError, data: Partial<Item>): Postgre
 	function valueLimitViolation() {
 		/**
 		 * NOTE:
-		 * PostgreSQL does not return the offending column, and we cannot reliably
-		 * infer it.
-		 *
-		 * When a single field is provided, the error must be from it.
-		 * For multi-field inserts, attribution would be speculative, and therefor omit it
+		 * Postgres doesn't return the offending column
 		 */
 
 		const regex = /"(.*?)"/g;
@@ -93,8 +79,7 @@ export function extractError(error: PostgresError, data: Partial<Item>): Postgre
 		if (!matches) return error;
 
 		const collection = matches[0].slice(1, -1);
-		const fields = Object.keys(data);
-		const field = fields.length === 1 ? fields[0]! : null;
+		const field = matches[1]?.slice(1, -1) ?? null;
 
 		return new ValueTooLongError({
 			collection,

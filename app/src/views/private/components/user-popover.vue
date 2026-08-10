@@ -96,11 +96,11 @@ function navigateToUser() {
 				<VIcon v-else name="person" />
 			</VAvatar>
 			<div class="data">
-				<div class="name type-label">{{ userName(data) }}</div>
-				<VChip class="status" :class="data.status" :label="false" small>
+				<div class="name type-title">{{ userName(data) }}</div>
+				<VChip class="status" :class="data.status" small>
 					{{ $t(`fields.directus_users.status_${data.status}`) }}
 				</VChip>
-				<VChip v-if="data.role?.name" :label="false" small>{{ data.role.name }}</VChip>
+				<VChip v-if="data.role?.name" small>{{ data.role.name }}</VChip>
 				<div class="email">{{ data.email }}</div>
 			</div>
 		</div>
@@ -123,8 +123,7 @@ function navigateToUser() {
 	}
 
 	.status {
-		margin-block: 0.25rem;
-		margin-inline-end: 0.1875rem;
+		margin-inline-end: 0.25rem;
 
 		&.active {
 			--v-chip-color: var(--theme--success);

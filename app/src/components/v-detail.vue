@@ -53,7 +53,7 @@ function toggle() {
 		<slot name="activator" v-bind="{ active: internalActive, enable, disable, toggle }">
 			<button type="button" class="activator" :disabled @click="internalActive = !internalActive">
 				<VDivider>
-					<VIcon :name="internalActive ? 'expand_more' : 'chevron_right'" :disabled />
+					<VIcon :name="internalActive ? 'expand_more' : 'chevron_right'" :disabled small />
 					<slot name="title">{{ label || $t('toggle') }}</slot>
 				</VDivider>
 			</button>
@@ -86,7 +86,7 @@ function toggle() {
 }
 
 .v-icon {
-	margin-inline-end: 0.375rem;
+	margin-inline-end: 0.25rem;
 }
 
 .content {

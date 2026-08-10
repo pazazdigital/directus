@@ -1,20 +1,20 @@
 <script setup lang="ts">
 import { translateShortcut } from '@directus/composables';
+import VButton from '@/components/v-button.vue';
+import VIcon from '@/components/v-icon/v-icon.vue';
 import VTextOverflow from '@/components/v-text-overflow.vue';
-import PrivateViewHeaderBarActionButton from '@/views/private/private-view/components/private-view-header-bar-action-button.vue';
 import PrivateViewHeaderBarActions from '@/views/private/private-view/components/private-view-header-bar-actions.vue';
 import PrivateViewHeaderBarIcon from '@/views/private/private-view/components/private-view-header-bar-icon.vue';
 
 withDefaults(
 	defineProps<{
 		title?: string;
+		shadow?: boolean;
 		icon?: string;
 		iconColor?: string;
-		hasSidebar?: boolean;
-		cancelable?: boolean;
 	}>(),
 	{
-		cancelable: true,
+		shadow: false,
 	},
 );
 
@@ -24,15 +24,32 @@ defineEmits<{
 </script>
 
 <template>
-	<header class="header-bar" :class="{ 'has-sidebar': hasSidebar }">
-		<div class="cell start">
-			<div class="title-outer-prepend">
-				<PrivateViewHeaderBarIcon v-if="icon" class="title-icon" :icon :icon-color />
+	<header class="header-bar" :class="{ shadow }">
+		<div class="primary">
+			<VButton
+				v-tooltip.bottom="`${$t('cancel')} (${translateShortcut(['esc'])})`"
+				class="cancel-button"
+				rounded
+				icon
+				secondary
+				exact
+				small
+				@click="$emit('cancel')"
+			>
+				<VIcon name="close" small />
+			</VButton>
 
-				<slot v-else name="title-outer:prepend" />
+			<PrivateViewHeaderBarIcon v-if="icon" class="header-icon" :icon :icon-color />
+
+			<div class="title-outer-prepend">
+				<slot name="title-outer:prepend" />
 			</div>
 
 			<div class="title-container">
+				<div class="headline">
+					<slot name="headline" />
+				</div>
+
 				<div class="title">
 					<slot name="title">
 						<slot name="title:prepend" />
@@ -49,24 +66,14 @@ defineEmits<{
 			<div class="title-outer-append">
 				<slot name="title-outer:append" />
 			</div>
-		</div>
 
-		<div class="cell end">
-			<PrivateViewHeaderBarActions header-bar-inline>
-				<template #prepend><slot name="actions:prepend" /></template>
-				<slot name="actions" />
-				<template #primary><slot name="actions:primary" /></template>
-			</PrivateViewHeaderBarActions>
-
-			<PrivateViewHeaderBarActionButton
-				v-if="cancelable"
-				v-tooltip.bottom="`${$t('cancel')} (${translateShortcut(['esc'])})`"
-				class="close-button"
-				icon="close"
-				variant="ghost"
-				@click="$emit('cancel')"
-			/>
+			<div class="spacer" />
 		</div>
+		<PrivateViewHeaderBarActions>
+			<template #prepend><slot name="actions:prepend" /></template>
+			<slot name="actions" />
+			<template #append><slot name="actions:append" /></template>
+		</PrivateViewHeaderBarActions>
 	</header>
 </template>
 
@@ -74,73 +81,51 @@ defineEmits<{
 @use '@/styles/mixins';
 
 .header-bar {
-	position: relative;
-	display: flex;
-	align-items: center;
-	gap: var(--header-bar-gap);
+	position: sticky;
+	inset-block-start: 0;
+	inset-inline-start: 0;
+	z-index: 5;
+	background-color: var(--theme--header--background);
 	inline-size: 100%;
-	block-size: var(--header-bar-height);
 	padding-inline: var(--content-padding);
+	box-shadow: none;
+	border-block-end: var(--theme--header--border-width) solid var(--theme--header--border-color);
+	block-size: var(--header-bar-height);
+	grid-template-rows: repeat(2, 1fr);
 
-	/* background is set on .v-drawer, border is set on .main */
+	&.shadow {
+		box-shadow: var(--theme--header--box-shadow);
+		transition: box-shadow var(--fast) var(--transition);
+	}
 
-	&.has-sidebar {
-		@include mixins.breakpoint-up('lg') {
-			padding-inline-start: 1.125rem;
-		}
+	@media (width > 22.5rem) {
+		display: flex;
+		align-items: center;
+		gap: 0.6875rem;
 	}
 }
 
-.cell {
-	position: relative;
+.primary {
 	display: flex;
 	align-items: center;
-	block-size: var(--header-bar-height);
+	gap: 0.6875rem;
+	padding-block: 0.6875rem;
 
-	&.start {
-		flex-grow: 1;
-		min-inline-size: 0;
+	@media (width > 22.5rem) {
+		display: contents;
 	}
+}
 
-	&.end {
-		flex-shrink: 0;
-		max-inline-size: calc(100vw - var(--sidebar-collapsed-width) - var(--content-padding) * 2 - var(--header-bar-gap));
+.icon {
+	display: none;
+
+	@include mixins.breakpoint-up('sm') {
+		display: flex;
 	}
 }
 
 :is(.title-outer-prepend, .title-outer-append):empty {
 	display: contents;
-}
-
-.title-outer-prepend {
-	margin-inline-end: 0.25rem;
-
-	.header-bar:not(.has-sidebar) & {
-		@include mixins.breakpoint-up('sm') {
-			position: absolute;
-			inset-inline-end: 100%;
-		}
-	}
-
-	.header-bar.has-sidebar & {
-		@include mixins.breakpoint-between('sm', 'lg') {
-			position: absolute;
-			inset-inline-end: 100%;
-		}
-	}
-}
-
-.title-outer-append {
-	margin-inline-start: 0.5rem;
-}
-
-.close-button {
-	margin-inline-start: 0.25rem;
-
-	@include mixins.breakpoint-up('sm') {
-		position: absolute;
-		inset-inline-start: 100%;
-	}
 }
 
 .title-container {
@@ -152,14 +137,40 @@ defineEmits<{
 	display: flex;
 
 	&:deep(.type-title) {
-		--title-block-size: 1.375rem;
-
-		font-family: var(--theme--header--title--font-family);
-		font-weight: var(--theme--header--title--font-weight);
-		color: var(--theme--header--title--foreground);
+		line-height: 1.2;
 		max-inline-size: 100%;
-		block-size: var(--title-block-size);
-		line-height: var(--title-block-size);
+		block-size: 1.375rem;
+	}
+}
+
+.headline {
+	--v-breadcrumb-color: var(--theme--header--headline--foreground);
+
+	font-weight: 600;
+	font-size: 0.6875rem;
+	line-height: 1;
+	white-space: nowrap;
+	font-family: var(--theme--header--headline--font-family);
+}
+
+.spacer {
+	flex-basis: 0;
+	flex-grow: 1;
+}
+
+.cancel-button {
+	display: block;
+
+	@media (width >= 54rem) {
+		display: none;
+	}
+}
+
+.header-icon {
+	display: none;
+
+	@media (width >= 54rem) {
+		display: flex;
 	}
 }
 </style>

@@ -4,18 +4,18 @@ import { isEqual, isNil } from 'lodash';
 import { computed } from 'vue';
 import { RouteLocationRaw, useLink, useRoute } from 'vue-router';
 import VProgressCircular from './v-progress-circular.vue';
-import VIcon from '@/components/v-icon/v-icon.vue';
-import VMenu from '@/components/v-menu.vue';
 import vFocus from '@/directives/focus';
 import vTooltip from '@/directives/tooltip';
 
-export interface VButtonProps {
+interface Props {
 	/** Automatically focuses on the button */
 	autofocus?: boolean;
 	/** Styling of the button */
 	kind?: 'normal' | 'info' | 'success' | 'warning' | 'danger';
 	/** Stretches the button to it's maximal width */
 	fullWidth?: boolean;
+	/** Enable rounded corners */
+	rounded?: boolean;
 	/** No background */
 	outlined?: boolean;
 	/** Remove padding / min-inline-size. Meant to be used with just an icon as content */
@@ -66,11 +66,7 @@ export interface VButtonProps {
 	tooltip?: string;
 }
 
-export interface VButtonEmits {
-	click: [value?: MouseEvent];
-}
-
-const props = withDefaults(defineProps<VButtonProps>(), {
+const props = withDefaults(defineProps<Props>(), {
 	kind: 'normal',
 	type: 'button',
 	to: '',
@@ -80,7 +76,7 @@ const props = withDefaults(defineProps<VButtonProps>(), {
 	active: undefined,
 });
 
-const emit = defineEmits<VButtonEmits>();
+const emit = defineEmits(['click']);
 
 const route = useRoute();
 
@@ -143,9 +139,8 @@ async function onClick(event: MouseEvent) {
 </script>
 
 <template>
-	<div class="v-button" :class="{ secondary, warning, danger, 'full-width': fullWidth }">
+	<div class="v-button" :class="{ secondary, warning, danger, 'full-width': fullWidth, rounded }">
 		<slot name="prepend-outer" />
-
 		<component
 			:is="component"
 			v-focus="autofocus"
@@ -163,7 +158,6 @@ async function onClick(event: MouseEvent) {
 					dashed,
 					tile,
 					'full-width': fullWidth,
-					'has-split-menu': $slots['split-menu'],
 				},
 				kind,
 			]"
@@ -181,50 +175,24 @@ async function onClick(event: MouseEvent) {
 				</slot>
 			</div>
 		</component>
-
-		<VMenu v-if="$slots['split-menu']" show-arrow>
-			<template #activator="{ toggle: toggleSplitMenu, active: splitMenuActive }">
-				<button
-					type="button"
-					class="split-menu-button"
-					:class="[
-						sizeClass,
-						{
-							active: splitMenuActive,
-							outlined,
-							dashed,
-						},
-						kind,
-					]"
-					:disabled="disabled"
-					:aria-label="$t('aria.more_options')"
-					@click.stop="toggleSplitMenu"
-				>
-					<VIcon name="keyboard_arrow_down" />
-				</button>
-			</template>
-
-			<slot name="split-menu" />
-		</VMenu>
-
 		<slot name="append-outer" />
 	</div>
 </template>
 
-<style lang="scss" scoped>
+<style scoped>
 /*
 
 	Available Variables:
 
 		--v-button-width                      [auto]
-		--v-button-height                     [var(--button-height-default)]
+		--v-button-height                     [2.5rem]
 		--v-button-color                      [var(--foreground-inverted)]
 		--v-button-color-hover                [var(--foreground-inverted)]
 		--v-button-color-active               [var(--foreground-inverted)]
 		--v-button-color-disabled             [var(--theme--foreground-subdued)]
 		--v-button-background-color           [var(--theme--primary)]
 		--v-button-background-color-hover     [var(--theme--primary-accent)]
-		--v-button-background-color-active    [var(--theme--primary-accent)]
+		--v-button-background-color-active    [var(--theme--primary)]
 		--v-button-background-color-disabled  [var(--theme--background-normal)]
 		--v-button-font-size                  [0.875rem]
 		--v-button-font-weight                [600]
@@ -237,37 +205,33 @@ async function onClick(event: MouseEvent) {
 .info {
 	--v-button-color: var(--white);
 	--v-button-color-hover: var(--white);
-	--v-button-color-active: var(--white);
 	--v-button-background-color: var(--blue);
 	--v-button-background-color-hover: var(--blue-125);
-	--v-button-background-color-active: var(--blue-125);
+	--v-button-background-color-active: var(--blue);
 }
 
 .success {
 	--v-button-color: var(--white);
 	--v-button-color-hover: var(--white);
-	--v-button-color-active: var(--white);
 	--v-button-background-color: var(--theme--success);
 	--v-button-background-color-hover: var(--success-125);
-	--v-button-background-color-active: var(--success-125);
+	--v-button-background-color-active: var(--theme--success);
 }
 
 .warning {
 	--v-button-color: var(--white);
 	--v-button-color-hover: var(--white);
-	--v-button-color-active: var(--white);
 	--v-button-background-color: var(--theme--warning);
 	--v-button-background-color-hover: var(--warning-125);
-	--v-button-background-color-active: var(--warning-125);
+	--v-button-background-color-active: var(--theme--warning);
 }
 
 .danger {
 	--v-button-color: var(--white);
 	--v-button-color-hover: var(--white);
-	--v-button-color-active: var(--white);
 	--v-button-background-color: var(--theme--danger);
 	--v-button-background-color-hover: var(--danger-125);
-	--v-button-background-color-active: var(--danger-125);
+	--v-button-background-color-active: var(--theme--danger);
 }
 
 .secondary {
@@ -277,6 +241,26 @@ async function onClick(event: MouseEvent) {
 	--v-button-background-color: var(--theme--background-normal);
 	--v-button-background-color-hover: var(--theme--background-accent);
 	--v-button-background-color-active: var(--theme--background-accent);
+}
+
+.secondary.rounded {
+	--v-button-background-color: var(--theme--background-normal);
+	--v-button-background-color-active: var(--theme--background-normal);
+	--v-button-background-color-hover: var(--theme--background-accent);
+}
+
+.warning.rounded {
+	--v-button-background-color: var(--warning-10);
+	--v-button-color: var(--theme--warning);
+	--v-button-background-color-hover: var(--warning-25);
+	--v-button-color-hover: var(--theme--warning);
+}
+
+.danger.rounded {
+	--v-button-background-color: var(--danger-10);
+	--v-button-color: var(--theme--danger);
+	--v-button-background-color-hover: var(--danger-25);
+	--v-button-color-hover: var(--theme--danger);
 }
 
 .v-button {
@@ -289,61 +273,31 @@ async function onClick(event: MouseEvent) {
 	min-inline-size: 100%;
 }
 
-.button,
-.split-menu-button {
-	block-size: var(--v-button-height, var(--button-height-default));
-	color: var(--v-button-color, var(--foreground-inverted));
-	background-color: var(--v-button-background-color, var(--theme--primary));
-	border: var(--theme--border-width) solid var(--v-button-background-color, var(--theme--primary));
-	border-radius: var(--theme--border-radius);
-	transition: var(--fast) var(--transition);
-	transition-property: background-color, border, color;
-
-	&:hover {
-		color: var(--v-button-color-hover, var(--foreground-inverted));
-		background-color: var(--v-button-background-color-hover, var(--theme--primary-accent));
-		border-color: var(--v-button-background-color-hover, var(--theme--primary-accent));
-	}
-}
-
 .button {
 	position: relative;
 	display: flex;
 	align-items: center;
 	inline-size: var(--v-button-width, auto);
-	min-inline-size: var(--v-button-min-width, 6.25rem);
-	padding: var(--v-button-padding, 0 1rem);
+	min-inline-size: var(--v-button-min-width, 7.875rem);
+	block-size: var(--v-button-height, 2.5rem);
+	padding: var(--v-button-padding, 0 1.0625rem);
+	color: var(--v-button-color, var(--foreground-inverted));
 	font-weight: var(--v-button-font-weight, 600);
 	font-size: var(--v-button-font-size, 0.875rem);
 	line-height: var(--v-button-line-height, 1.4286);
 	text-decoration: none;
+	background-color: var(--v-button-background-color, var(--theme--primary));
+	border: var(--theme--border-width) solid var(--v-button-background-color, var(--theme--primary));
+	border-radius: var(--theme--border-radius);
 	cursor: pointer;
-
-	&.has-split-menu {
-		border-start-end-radius: 0;
-		border-end-end-radius: 0;
-	}
+	transition: var(--fast) var(--transition);
+	transition-property: background-color, border;
 }
 
-.split-menu-button {
-	inline-size: var(--v-button-height, var(--button-height-default));
-	margin-inline-start: 1px; /* stylelint-disable-line unit-disallowed-list -- hairline */
-
-	&,
-	&:focus-visible {
-		border-start-start-radius: 0;
-		border-end-start-radius: 0;
-	}
-
-	&:hover,
-	&:focus-visible {
-		z-index: 1;
-	}
-
-	&.outlined,
-	&.dashed {
-		margin-inline-start: calc(-1 * var(--theme--border-width));
-	}
+.button:hover {
+	color: var(--v-button-color-hover, var(--foreground-inverted));
+	background-color: var(--v-button-background-color-hover, var(--theme--primary-accent));
+	border-color: var(--v-button-background-color-hover, var(--theme--primary-accent));
 }
 
 .align-left {
@@ -358,12 +312,16 @@ async function onClick(event: MouseEvent) {
 	justify-content: flex-end;
 }
 
-.button:disabled,
-.split-menu-button:disabled {
+.button:disabled {
 	color: var(--v-button-color-disabled, var(--theme--foreground-subdued));
 	background-color: var(--v-button-background-color-disabled, var(--theme--background-normal));
 	border: var(--theme--border-width) solid var(--v-button-background-color-disabled, var(--theme--background-normal));
 	cursor: not-allowed;
+}
+
+.rounded,
+.rounded .button {
+	border-radius: 50%;
 }
 
 .outlined {
@@ -390,59 +348,39 @@ async function onClick(event: MouseEvent) {
 	border-style: dashed;
 }
 
-.x-small {
-	&.button,
-	&.split-menu-button {
-		--v-button-height: var(--button-height-xs);
-	}
+.button.x-small {
+	--v-button-height: 1.5625rem;
+	--v-button-font-size: 0.6875rem;
+	--v-button-min-width: 3.375rem;
 
-	&.button {
-		--v-button-font-size: 0.6875rem;
-		--v-button-min-width: 3.375rem;
-		--v-button-padding: 0 0.625rem;
-	}
+	padding: 0 0.6875rem;
 }
 
-.small {
-	&.button,
-	&.split-menu-button {
-		--v-button-height: var(--button-height-sm);
-	}
+.button.small {
+	--v-button-height: 2rem;
+	--v-button-font-size: 0.8125rem;
+	--v-button-min-width: 6.75rem;
 
-	&.button {
-		--v-button-font-size: 0.8125rem;
-		--v-button-min-width: 5rem;
-		--v-button-padding: 0 1rem;
-	}
+	padding: 0 0.6875rem;
 }
 
-.large {
-	&.button,
-	&.split-menu-button {
-		--v-button-height: var(--button-height-lg);
-	}
+.button.large {
+	--v-button-height: 2.9375rem;
+	--v-button-min-width: 8.6875rem;
 
-	&.button {
-		--v-button-min-width: 8.6875rem;
-		--v-button-padding: 0 1.25rem;
-	}
+	padding: 0 0.6875rem;
 }
 
-.x-large {
-	&.button,
-	&.split-menu-button {
-		--v-button-height: var(--button-height-xl);
-	}
+.button.x-large {
+	--v-button-height: 3.375rem;
+	--v-button-font-size: 1rem;
+	--v-button-min-width: 10.125rem;
 
-	&.button {
-		--v-button-font-size: 1rem;
-		--v-button-min-width: 10.125rem;
-		--v-button-padding: 0 1.5rem;
-	}
+	padding: 0 0.6875rem;
 }
 
 .button.icon {
-	inline-size: var(--v-button-height, var(--button-height-default));
+	inline-size: var(--v-button-height, 2.5rem);
 	min-inline-size: 0;
 	padding: 0;
 }
@@ -487,13 +425,10 @@ async function onClick(event: MouseEvent) {
 }
 
 .active {
-	&.button,
-	&.split-menu-button {
-		--v-button-color: var(--v-button-color-active, var(--foreground-inverted));
-		--v-button-color-hover: var(--v-button-color-active, var(--foreground-inverted));
-		--v-button-background-color: var(--v-button-background-color-active, var(--theme--primary-accent));
-		--v-button-background-color-hover: var(--v-button-background-color-active, var(--v-button-background-color));
-	}
+	--v-button-color: var(--v-button-color-active, var(--foreground-inverted)) !important;
+	--v-button-color-hover: var(--v-button-color-active, var(--foreground-inverted)) !important;
+	--v-button-background-color: var(--v-button-background-color-active, var(--theme--primary)) !important;
+	--v-button-background-color-hover: var(--v-button-background-color-active, var(--theme--primary)) !important;
 }
 
 .tile {

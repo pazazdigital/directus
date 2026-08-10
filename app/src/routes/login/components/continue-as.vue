@@ -7,7 +7,6 @@ import { logout } from '@/auth';
 import VButton from '@/components/v-button.vue';
 import VProgressCircular from '@/components/v-progress-circular.vue';
 import { hydrate } from '@/hydrate';
-import { navigateAfterLogin } from '@/routes/login/utils/navigate-after-login';
 import { unexpectedError } from '@/utils/unexpected-error';
 import { userName } from '@/utils/user-name';
 
@@ -52,7 +51,7 @@ async function hydrateAndLogin() {
 	await hydrate();
 	await userPromise;
 	const redirectQuery = router.currentRoute.value.query.redirect as string;
-	navigateAfterLogin(router, redirectQuery || lastPage.value || `/content`);
+	router.push(redirectQuery || lastPage.value || `/content`);
 }
 </script>
 

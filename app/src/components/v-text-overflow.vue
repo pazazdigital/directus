@@ -43,6 +43,7 @@ watch(
 <style lang="scss" scoped>
 .v-text-overflow {
 	overflow: hidden;
+	line-height: normal;
 	white-space: nowrap;
 	text-overflow: ellipsis;
 }

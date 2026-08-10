@@ -1,7 +1,6 @@
 import { useEnv } from '@directus/env';
 import { toBoolean } from '@directus/utils';
 import { getCache } from '../cache.js';
-import { getEntitlementManager } from '../license/index.js';
 import { track } from '../telemetry/index.js';
 import { scheduleSynchronizedJob } from '../utils/schedule.js';
 
@@ -21,9 +20,7 @@ export const jobCallback = () => {
 export default async function schedule(): Promise<boolean> {
 	const env = useEnv();
 
-	if (!getEntitlementManager().isEntitled('telemetry_required') && !toBoolean(env['TELEMETRY'])) {
-		return false;
-	}
+	if (toBoolean(env['TELEMETRY']) === false) return false;
 
 	scheduleSynchronizedJob('telemetry', '0 */6 * * *', jobCallback);
 

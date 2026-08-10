@@ -5,7 +5,6 @@ import type { Knex } from 'knex';
 import { clearSystemCache, getCache } from '../cache.js';
 import getDatabase from '../database/index.js';
 import emitter from '../emitter.js';
-import { getEntitlementManager } from '../license/index.js';
 import { fetchAllowedFields } from '../permissions/modules/fetch-allowed-fields/fetch-allowed-fields.js';
 import { validateAccess } from '../permissions/modules/validate-access/validate-access.js';
 import { shouldClearCache } from '../utils/should-clear-cache.js';
@@ -166,7 +165,6 @@ export class UtilsService {
 
 		if (system) {
 			await clearSystemCache({ forced: true });
-			await getEntitlementManager().clearCache();
 		}
 
 		return cache?.clear();

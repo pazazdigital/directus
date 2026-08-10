@@ -2,7 +2,6 @@ import type { Ref } from 'vue';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import api from '@/api';
-import { useLicenseStore } from '@/stores/license';
 import { unexpectedError } from '@/utils/unexpected-error';
 
 export interface UseSaveOptions {
@@ -21,14 +20,11 @@ export function useSave({ name }: UseSaveOptions) {
 
 		saving.value = true;
 
-		const licenseStore = useLicenseStore();
-
 		try {
 			const roleResponse = await api.post('/roles', {
 				name: name.value,
 			});
 
-			licenseStore.hydrate();
 			router.push({ name: 'settings-roles-item', params: { primaryKey: roleResponse.data.data.id } });
 		} catch (error) {
 			unexpectedError(error);

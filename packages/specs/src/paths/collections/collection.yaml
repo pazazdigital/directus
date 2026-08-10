@@ -2,6 +2,8 @@ get:
   summary: Retrieve a Collection
   description: Retrieves the details of a single collection.
   operationId: getCollection
+  parameters:
+    - $ref: '../../openapi.yaml#/components/parameters/Meta'
   responses:
     '200':
       content:
@@ -22,6 +24,8 @@ patch:
   summary: Update a Collection
   description: Update an existing collection.
   operationId: updateCollection
+  parameters:
+    - $ref: '../../openapi.yaml#/components/parameters/Meta'
   requestBody:
     content:
       application/json:

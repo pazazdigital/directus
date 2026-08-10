@@ -378,6 +378,7 @@ const tFieldType = (type: string) => t(type === 'geometry' ? 'geometry.All' : ty
 .field-select {
 	--input-height: 2.25rem;
 	--theme--form--field--input--padding: 0.4375rem;
+	-webkit-user-select: none;
 	user-select: none;
 }
 
@@ -574,9 +575,8 @@ const tFieldType = (type: string) => t(type === 'geometry' ? 'geometry.All' : ty
 }
 
 .sortable-ghost {
-	/* Not a focus ring, so using --theme--border-width for outline width */
-	outline: var(--theme--border-width) dashed var(--theme--primary);
 	border-radius: var(--theme--border-radius);
+	outline: 2px dashed var(--theme--primary);
 
 	> * {
 		opacity: 0;

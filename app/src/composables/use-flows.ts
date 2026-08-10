@@ -7,7 +7,6 @@ import api from '@/api';
 import { useFlowsStore } from '@/stores/flows';
 import { useNotificationsStore } from '@/stores/notifications';
 import { notify } from '@/utils/notify';
-import { translate as translateLiteral } from '@/utils/translate-literal';
 import { translate } from '@/utils/translate-object-values';
 import { unexpectedError } from '@/utils/unexpected-error';
 
@@ -134,7 +133,6 @@ export function useFlows(options: UseFlowsOptions) {
 			)
 			.map((flow) => ({
 				...flow,
-				name: translateLiteral(flow.name),
 				options: flow.options ? translate(flow.options) : null,
 				tooltip: getFlowTooltip(flow),
 				isFlowDisabled: checkFlowDisabled(flow),

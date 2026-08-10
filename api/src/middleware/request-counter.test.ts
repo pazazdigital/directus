@@ -2,18 +2,13 @@ import { afterEach, describe, expect, test, vi } from 'vitest';
 import { useBufferedCounter } from '../telemetry/counter/use-buffered-counter.js';
 import requestCounterMiddleware from './request-counter.js';
 
-vi.mock('@directus/env', async () => {
-	const { mockEnv } = await import('../test-utils/env.js');
-	return mockEnv({ TELEMETRY: true });
-});
-
-vi.mock('../telemetry/counter/use-buffered-counter.js');
-
-vi.mock('../license/index.js', () => ({
-	getEntitlementManager: vi.fn().mockReturnValue({
-		isEntitled: vi.fn().mockReturnValue(false),
+vi.mock('@directus/env', () => ({
+	useEnv: vi.fn().mockReturnValue({
+		TELEMETRY: true,
 	}),
 }));
+
+vi.mock('../telemetry/counter/use-buffered-counter.js');
 
 vi.mock('../logger/index.js', () => ({
 	useLogger: vi.fn().mockReturnValue({
@@ -128,10 +123,11 @@ describe('requestCounter middleware', () => {
 		test('Does not increment counter but still calls next', async () => {
 			vi.resetModules();
 
-			vi.doMock('@directus/env', async () => {
-				const { mockEnv } = await import('../test-utils/env.js');
-				return mockEnv({ TELEMETRY: false });
-			});
+			vi.doMock('@directus/env', () => ({
+				useEnv: vi.fn().mockReturnValue({
+					TELEMETRY: false,
+				}),
+			}));
 
 			vi.doMock('../telemetry/counter/use-buffered-counter.js');
 

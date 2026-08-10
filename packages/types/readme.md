@@ -6,7 +6,7 @@ Shared types for Directus
 
 This package exports shared types for use within Directus, an open-source headless CMS.
 
-For more information about Directus, visit the [official website](https://directus.com).
+For more information about Directus, visit the [official website](https://directus.io).
 
 ## Installation
 
@@ -21,5 +21,5 @@ This package is licensed under the MIT License. See the
 
 ## Additional Resources
 
-- [Directus Website](https://directus.com)
+- [Directus Website](https://directus.io)
 - [Directus GitHub Repository](https://github.com/directus/directus)

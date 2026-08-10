@@ -12,17 +12,14 @@ import type { RateLimiterAbstract } from 'rate-limiter-flexible';
 import WebSocket, { type Server, WebSocketServer } from 'ws';
 import { fromZodError } from 'zod-validation-error';
 import emitter from '../../emitter.js';
-import { getLicenseManager } from '../../license/manager.js';
 import { useLogger } from '../../logger/index.js';
 import { createDefaultAccountability } from '../../permissions/utils/create-default-accountability.js';
 import { createRateLimiter } from '../../rate-limiter.js';
 import { getIPFromReq } from '../../utils/get-ip-from-req.js';
-import { isUnauthenticated } from '../../utils/is-unauthenticated.js';
 import { authenticateConnection, authenticationSuccess } from '../authenticate.js';
 import { handleWebSocketError, WebSocketError } from '../errors.js';
 import { AuthMode, WebSocketAuthMessage } from '../messages.js';
 import type { AuthenticationState, UpgradeContext, WebSocketAuthentication, WebSocketClient } from '../types.js';
-import { isOriginAllowed } from '../utils/is-origin-allowed.js';
 import { getMessageType } from '../utils/message.js';
 import { waitForAnyMessage, waitForMessageType } from '../utils/wait-for-message.js';
 
@@ -43,6 +40,7 @@ export default abstract class SocketController {
 	constructor(httpServer: httpServer, configPrefix: string) {
 		this.server = new WebSocketServer({
 			noServer: true,
+			// @ts-ignore TODO Remove once @types/ws has been updated
 			autoPong: false,
 		});
 
@@ -120,13 +118,6 @@ export default abstract class SocketController {
 		const { pathname, query } = parse(request.url!, true);
 		if (pathname !== this.endpoint) return;
 
-		if (await getLicenseManager().isLocked()) {
-			logger.debug('WebSocket upgrade denied - License is in a locked state and must be resolved');
-			socket.write('HTTP/1.1 403 Forbidden\r\n\r\n');
-			socket.destroy();
-			return;
-		}
-
 		if (this.clients.size >= this.maxConnections) {
 			logger.debug('WebSocket upgrade denied - max connections reached');
 			socket.write('HTTP/1.1 403 Forbidden\r\n\r\n');
@@ -134,15 +125,7 @@ export default abstract class SocketController {
 			return;
 		}
 
-		if (!isOriginAllowed(request)) {
-			logger.debug(`WebSocket upgrade denied - disallowed Origin: ${request.headers['origin']}`);
-			socket.write('HTTP/1.1 403 Forbidden\r\n\r\n');
-			socket.destroy();
-			return;
-		}
-
 		const env = useEnv();
-		const origin = request.headers['origin'];
 		const cookies = request.headers.cookie ? cookie.parse(request.headers.cookie) : {};
 		const sessionCookieName = env['SESSION_COOKIE_NAME'] as string;
 
@@ -153,6 +136,7 @@ export default abstract class SocketController {
 		const userAgent = request.headers['user-agent']?.substring(0, 1024);
 		if (userAgent) accountabilityOverrides.userAgent = userAgent;
 
+		const origin = request.headers['origin'];
 		if (origin) accountabilityOverrides.origin = origin;
 		const context: UpgradeContext = { request, socket, head, accountabilityOverrides };
 
@@ -190,25 +174,31 @@ export default abstract class SocketController {
 		{ request, socket, head, accountabilityOverrides }: UpgradeContext,
 		token: string | null,
 	) {
-		let accountability: Accountability = createDefaultAccountability(accountabilityOverrides);
+		let accountability: Accountability | null = null;
 		let expires_at: number | null = null;
 
 		if (token) {
 			try {
 				const state = await authenticateConnection({ access_token: token }, accountabilityOverrides);
-				this.checkUserRequirements(state.accountability);
 				accountability = state.accountability;
 				expires_at = state.expires_at;
 			} catch {
-				logger.debug('WebSocket upgrade denied - ' + JSON.stringify(accountability));
-				socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
-				socket.destroy();
-				return;
+				accountability = null;
+				expires_at = null;
 			}
 		}
 
-		if (!token || isUnauthenticated(accountability)) {
-			logger.debug('WebSocket upgrade denied - ' + JSON.stringify(accountability));
+		if (!token || !accountability || !accountability.user) {
+			logger.debug('WebSocket upgrade denied - ' + JSON.stringify(accountability || 'invalid'));
+			socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+			socket.destroy();
+			return;
+		}
+
+		try {
+			this.checkUserRequirements(accountability);
+		} catch {
+			logger.debug('WebSocket upgrade denied - ' + JSON.stringify(accountability || 'invalid'));
 			socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
 			socket.destroy();
 			return;
@@ -269,18 +259,6 @@ export default abstract class SocketController {
 					logger.debug(`WebSocket#${client.uid} is rate limited`);
 					return;
 				}
-			}
-
-			if (await getLicenseManager().isLocked()) {
-				const error = new WebSocketError(
-					'license',
-					'SERVICE_UNAVAILABLE',
-					`License is in a locked state and must be resolved`,
-				);
-
-				handleWebSocketError(client, error, 'server');
-				logger.debug(`WebSocket#${client.uid} closed due to license in locked state`);
-				return;
 			}
 
 			let message: WebSocketMessage;
@@ -353,13 +331,21 @@ export default abstract class SocketController {
 	}
 
 	protected async handleAuthRequest(client: WebSocketClient, message: WebSocketAuthMessage) {
-		/**
-		 * Re-use the existing ip, userAgent and origin accountability properties.
-		 * They are only sent in the original connection request
-		 */
-		const accountabilityOverrides = this.getAccountabilityOverrides(client);
-
 		try {
+			let accountabilityOverrides = {};
+
+			/**
+			 * Re-use the existing ip, userAgent and origin accountability properties.
+			 * They are only sent in the original connection request
+			 */
+			if (client.accountability) {
+				accountabilityOverrides = {
+					ip: client.accountability.ip,
+					userAgent: client.accountability.userAgent,
+					origin: client.accountability.origin,
+				};
+			}
+
 			const { accountability, expires_at, refresh_token } = await authenticateConnection(
 				message,
 				accountabilityOverrides,
@@ -377,7 +363,7 @@ export default abstract class SocketController {
 			logger.trace(`WebSocket#${client.uid} failed authentication`);
 			emitter.emitAction('websocket.auth.failure', { client });
 
-			client.accountability = createDefaultAccountability(accountabilityOverrides);
+			client.accountability = null;
 			client.expires_at = null;
 
 			const _error =
@@ -391,28 +377,6 @@ export default abstract class SocketController {
 				client.close();
 			}
 		}
-	}
-
-	/**
-	 * Build the accountability overrides (ip, userAgent, origin) from an existing client connection.
-	 * These properties are only available on the original connection request.
-	 */
-	private getAccountabilityOverrides(client: WebSocketClient): Partial<Accountability> {
-		if (!client.accountability) return {};
-
-		const result: Partial<Accountability> = {
-			ip: client.accountability.ip,
-		};
-
-		if (client.accountability.userAgent) {
-			result.userAgent = client.accountability.userAgent;
-		}
-
-		if (client.accountability.origin) {
-			result.origin = client.accountability.origin;
-		}
-
-		return result;
 	}
 
 	protected checkUserRequirements(_accountability: Accountability | null) {
@@ -433,7 +397,7 @@ export default abstract class SocketController {
 		if (expiresIn > TOKEN_CHECK_INTERVAL) return;
 
 		client.auth_timer = setTimeout(() => {
-			client.accountability = createDefaultAccountability(this.getAccountabilityOverrides(client));
+			client.accountability = null;
 			client.expires_at = null;
 			handleWebSocketError(client, new TokenExpiredError(), 'auth');
 

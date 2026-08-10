@@ -28,7 +28,3 @@ export function isUserUpdated(field: DeepPartial<Field>) {
 export function isUserCreated(field: DeepPartial<Field>) {
 	return field.meta?.special?.some((type) => type === 'user-created') ?? false;
 }
-
-export function isPresentationField(field: DeepPartial<Field>) {
-	return field.meta?.special?.includes('no-data') ?? false;
-}

@@ -82,13 +82,13 @@ vi.mock('@/composables/use-relation-multiple', () => ({
 			cleanItem: vi.fn((item: any) => item),
 			getPage: vi.fn(),
 			isLocalItem: vi.fn(() => false),
-			getItemEdits: vi.fn(() => ({})),
+			getItemEdits: vi.fn(() => 0),
 			isEmpty: vi.fn(() => false),
 		})),
 		cleanItem: vi.fn((item: any) => item),
 		isItemSelected: vi.fn(() => false),
 		isLocalItem: vi.fn(() => false),
-		getItemEdits: vi.fn(() => ({})),
+		getItemEdits: vi.fn(() => 0),
 	}),
 }));
 

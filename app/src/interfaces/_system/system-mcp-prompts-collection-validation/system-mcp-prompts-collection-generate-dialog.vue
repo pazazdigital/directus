@@ -15,7 +15,6 @@ import VNotice from '@/components/v-notice.vue';
 import VSkeletonLoader from '@/components/v-skeleton-loader.vue';
 import { useCollectionsStore } from '@/stores/collections';
 import { useFieldsStore } from '@/stores/fields';
-import { useLicenseStore } from '@/stores/license';
 import { useRelationsStore } from '@/stores/relations';
 import { notify } from '@/utils/notify';
 import { unexpectedError } from '@/utils/unexpected-error';
@@ -24,7 +23,6 @@ const { t } = useI18n();
 
 const collectionsStore = useCollectionsStore();
 const fieldsStore = useFieldsStore();
-const licenseStore = useLicenseStore();
 const relationsStore = useRelationsStore();
 
 const active = defineModel<boolean>('active');
@@ -115,7 +113,7 @@ async function generateCollection() {
 			storeHydrations.push(relationsStore.hydrate());
 		}
 
-		storeHydrations.push(collectionsStore.hydrate(), fieldsStore.hydrate(), licenseStore.hydrate());
+		storeHydrations.push(collectionsStore.hydrate(), fieldsStore.hydrate());
 		await Promise.all(storeHydrations);
 
 		notify({
@@ -246,6 +244,7 @@ async function generateCollection() {
 
 	--v-input-border-color: var(--theme--danger);
 	--v-input-border-color-hover: var(--theme--danger);
+	--v-input-border-color-focus: var(--theme--danger);
 }
 
 .v-input.monospace {

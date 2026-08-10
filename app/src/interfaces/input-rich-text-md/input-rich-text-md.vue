@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useShortcut } from '@directus/composables';
+import { translateShortcut, useShortcut } from '@directus/composables';
 import CodeMirror from 'codemirror';
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { Alteration, applyEdit, CustomSyntax } from './edits';
@@ -12,7 +12,6 @@ import VDialog from '@/components/v-dialog.vue';
 import VIcon from '@/components/v-icon/v-icon.vue';
 import VInput from '@/components/v-input.vue';
 import VItemGroup from '@/components/v-item-group.vue';
-import VKbdShortcut from '@/components/v-kbd-shortcut.vue';
 import VListItemContent from '@/components/v-list-item-content.vue';
 import VListItemHint from '@/components/v-list-item-hint.vue';
 import VListItem from '@/components/v-list-item.vue';
@@ -242,17 +241,14 @@ const menuActive = computed(() => imageDialogOpen.value);
 					<VList>
 						<VListItem v-for="n in 6" :key="n" clickable @click="edit('heading', { level: n })">
 							<VListItemContent><VTextOverflow :text="$t(`wysiwyg_options.h${n}`)" /></VListItemContent>
-							<VListItemHint>
-								<VKbdShortcut :value="['meta', 'alt']" />
-								{{ n }}
-							</VListItemHint>
+							<VListItemHint>{{ translateShortcut(['meta', 'alt']) }} {{ n }}</VListItemHint>
 						</VListItem>
 					</VList>
 				</VMenu>
 
 				<VButton
 					v-if="toolbar?.includes('bold')"
-					v-tooltip="{ text: $t('wysiwyg_options.bold'), kbd: ['meta', 'b'] }"
+					v-tooltip="$t('wysiwyg_options.bold') + ' - ' + translateShortcut(['meta', 'b'])"
 					:disabled="disabled"
 					small
 					icon
@@ -262,7 +258,7 @@ const menuActive = computed(() => imageDialogOpen.value);
 				</VButton>
 				<VButton
 					v-if="toolbar?.includes('italic')"
-					v-tooltip="{ text: $t('wysiwyg_options.italic'), kbd: ['meta', 'i'] }"
+					v-tooltip="$t('wysiwyg_options.italic') + ' - ' + translateShortcut(['meta', 'i'])"
 					:disabled="disabled"
 					small
 					icon
@@ -272,7 +268,7 @@ const menuActive = computed(() => imageDialogOpen.value);
 				</VButton>
 				<VButton
 					v-if="toolbar?.includes('strikethrough')"
-					v-tooltip="{ text: $t('wysiwyg_options.strikethrough'), kbd: ['meta', 'alt', 'd'] }"
+					v-tooltip="$t('wysiwyg_options.strikethrough') + ' - ' + translateShortcut(['meta', 'alt', 'd'])"
 					:disabled="disabled"
 					small
 					icon
@@ -302,7 +298,7 @@ const menuActive = computed(() => imageDialogOpen.value);
 				</VButton>
 				<VButton
 					v-if="toolbar?.includes('blockquote')"
-					v-tooltip="{ text: $t('wysiwyg_options.blockquote'), kbd: ['meta', 'alt', 'q'] }"
+					v-tooltip="$t('wysiwyg_options.blockquote') + ' - ' + translateShortcut(['meta', 'alt', 'q'])"
 					:disabled="disabled"
 					small
 					icon
@@ -312,7 +308,7 @@ const menuActive = computed(() => imageDialogOpen.value);
 				</VButton>
 				<VButton
 					v-if="toolbar?.includes('code')"
-					v-tooltip="{ text: $t('wysiwyg_options.codeblock'), kbd: ['meta', 'alt', 'c'] }"
+					v-tooltip="$t('wysiwyg_options.codeblock') + ' - ' + translateShortcut(['meta', 'alt', 'c'])"
 					:disabled="disabled"
 					small
 					icon
@@ -322,7 +318,7 @@ const menuActive = computed(() => imageDialogOpen.value);
 				</VButton>
 				<VButton
 					v-if="toolbar?.includes('link')"
-					v-tooltip="{ text: $t('wysiwyg_options.link'), kbd: ['meta', 'k'] }"
+					v-tooltip="$t('wysiwyg_options.link') + ' - ' + translateShortcut(['meta', 'k'])"
 					:disabled="disabled"
 					small
 					icon
@@ -395,6 +391,7 @@ const menuActive = computed(() => imageDialogOpen.value);
 				:model-value="[view]"
 				class="view"
 				mandatory
+				rounded
 				@update:model-value="([value]: ['editor' | 'preview']) => (view = value)"
 			>
 				<VButton x-small value="editor" :disabled="disabled && !nonEditable" :class="[{ active: view !== 'preview' }]">
@@ -406,7 +403,7 @@ const menuActive = computed(() => imageDialogOpen.value);
 			</VItemGroup>
 		</div>
 
-		<div ref="codemirrorEl" class="codemirror-no-bg-color"></div>
+		<div ref="codemirrorEl"></div>
 		<template v-if="softLength">
 			<span
 				class="remaining"
@@ -460,10 +457,10 @@ const menuActive = computed(() => imageDialogOpen.value);
 	font-family: var(--theme--fonts--sans--font-family);
 	border: var(--theme--border-width) solid var(--theme--form--field--input--border-color);
 	border-radius: var(--theme--border-radius);
+	box-shadow: var(--theme--form--field--input--box-shadow);
 	transition-duration: var(--fast);
 	transition-timing-function: var(--transition);
-	transition-property: border-color;
-	background-color: var(--theme--form--field--input--background);
+	transition-property: box-shadow, border-color;
 }
 
 .interface-input-rich-text-md :deep(.CodeMirror-scroll) {
@@ -481,15 +478,12 @@ const menuActive = computed(() => imageDialogOpen.value);
 
 .interface-input-rich-text-md:not(.disabled):hover {
 	border-color: var(--theme--form--field--input--border-color-hover);
+	box-shadow: var(--theme--form--field--input--box-shadow-hover);
 }
 
 .interface-input-rich-text-md:not(.disabled):focus-within {
-	outline: var(--focus-ring-width) solid var(--theme--form--field--input--focus-ring-color);
-	outline-offset: var(--focus-ring-offset-invert);
-}
-
-.interface-input-rich-text-md :deep(.CodeMirror.CodeMirror-focused) {
-	outline: 0;
+	border-color: var(--theme--form--field--input--border-color-focus);
+	box-shadow: var(--theme--form--field--input--box-shadow-focus);
 }
 
 textarea {

@@ -119,11 +119,6 @@ function toggle(item: Record<string, any>) {
 		border-color: var(--theme--border-color-accent);
 	}
 
-	&:not(.disabled):focus-visible {
-		outline: var(--focus-ring-width) solid var(--theme--form--field--input--focus-ring-color);
-		outline-offset: var(--focus-ring-offset-invert);
-	}
-
 	&.disabled {
 		cursor: not-allowed;
 	}
@@ -151,14 +146,14 @@ function toggle(item: Record<string, any>) {
 		z-index: 2;
 		color: var(--theme--primary);
 		background-color: var(--theme--primary-background);
-		border-color: var(--theme--primary);
+		border-color: var(--theme--form--field--input--border-color-focus);
 
 		.v-icon {
 			--v-icon-color: var(--theme--primary);
 		}
 
 		&:hover {
-			border-color: var(--theme--primary);
+			border-color: var(--theme--form--field--input--border-color-focus);
 		}
 	}
 }

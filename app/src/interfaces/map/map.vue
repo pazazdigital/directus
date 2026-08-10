@@ -521,9 +521,8 @@ function handleKeyDown(event: any) {
 	border-radius: var(--theme--border-radius);
 
 	&:not(.disabled):focus-within {
-		outline: var(--focus-ring-width) solid
-			var(--v-input-focus-ring-color, var(--theme--form--field--input--focus-ring-color));
-		outline-offset: max(-1 * var(--focus-ring-width), -1 * var(--theme--border-width));
+		border-color: var(--v-input-border-color-focus, var(--theme--form--field--input--border-color-focus));
+		box-shadow: var(--theme--form--field--input--box-shadow-focus);
 	}
 
 	:deep(button) {

@@ -4,6 +4,7 @@ get:
   operationId: getPermission
   parameters:
     - $ref: '../../openapi.yaml#/components/parameters/Fields'
+    - $ref: '../../openapi.yaml#/components/parameters/Meta'
   responses:
     '200':
       description: Successful request
@@ -25,6 +26,8 @@ patch:
   summary: Update a Permission
   description: Update an existing permission
   operationId: updatePermission
+  parameters:
+    - $ref: '../../openapi.yaml#/components/parameters/Meta'
   requestBody:
     content:
       application/json:

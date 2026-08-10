@@ -93,7 +93,7 @@ const isPromotableField = computed(() => {
 					filled
 				/>
 
-				<VChip v-if="badge" class="badge" :label="false" x-small>{{ badge }}</VChip>
+				<VChip v-if="badge" class="badge" x-small>{{ badge }}</VChip>
 
 				<VIcon
 					v-if="!disabled && rawEditorEnabled"
@@ -139,7 +139,7 @@ const isPromotableField = computed(() => {
 	}
 
 	.v-checkbox {
-		block-size: var(--label-height); /* Prevent label from increasing height */
+		block-size: 1rem; // Don't push down label with normal icon height (1.375rem)
 		margin-inline-end: 0.25rem;
 		display: inline-flex;
 		align-self: baseline;
@@ -182,9 +182,7 @@ const isPromotableField = computed(() => {
 	}
 
 	.ctx-arrow {
-		--v-icon-size: 1.375rem;
-
-		margin-block-start: calc(var(--label-height) - var(--v-icon-size)); /* Prevent label from increasing height */
+		margin-block-start: -0.1875rem;
 		color: var(--theme--foreground-subdued);
 		opacity: 0;
 		transition: opacity var(--fast) var(--transition);
@@ -207,18 +205,13 @@ const isPromotableField = computed(() => {
 	}
 
 	.raw-editor-toggle {
-		--raw-editor-toggle-size: 1.375rem;
-
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		block-size: var(--raw-editor-toggle-size);
-		inline-size: var(--raw-editor-toggle-size);
+		block-size: 1.375rem;
+		inline-size: 1.375rem;
+		margin-block-start: -0.125rem;
 		margin-inline-start: 0.3125rem;
-		margin-block-start: calc(
-			var(--label-height) - var(--raw-editor-toggle-size) /* Prevent label from increasing height */
-		);
-		transform: translateY(0.0625rem); /* Visually align element */
 		color: var(--theme--foreground-subdued);
 		transition: color var(--fast) var(--transition);
 
@@ -236,9 +229,8 @@ const isPromotableField = computed(() => {
 	&.edited {
 		.edit-dot {
 			position: absolute;
-			inset-inline-end: 100%;
-			inset-block-start: 50%;
-			transform: translate(-0.1875rem, -50%);
+			inset-block-start: 0.375rem;
+			inset-inline-start: -0.375rem;
 			display: block;
 			inline-size: 0.25rem;
 			block-size: 0.25rem;
@@ -257,16 +249,16 @@ const isPromotableField = computed(() => {
 	}
 }
 
+.type-label {
+	font-family: var(--theme--form--field--label--font-family);
+}
+
 .spacer {
 	flex-grow: 1;
 }
 
 .avatars {
-	--collab-indicator-height: 1.375rem;
-
-	margin-block-start: calc(
-		var(--label-height) - var(--collab-indicator-height) /* Prevent label from increasing height */
-	);
+	margin-block-start: -0.1875rem;
 	align-self: start;
 	flex-shrink: 0;
 }

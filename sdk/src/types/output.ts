@@ -1,5 +1,5 @@
 import type { FieldsWildcard, HasManyToAnyRelation, PickRelationalFields } from './fields.js';
-import type { JsonFieldAlias, MappedFunctionFields } from './functions.js';
+import type { MappedFunctionFields } from './functions.js';
 import type { ItemType, RemoveRelationships } from './schema.js';
 import type { IfAny, IsNullable, Merge, Mutable, Prettify, UnpackList } from './utils.js';
 
@@ -22,16 +22,13 @@ export type ApplyQueryFields<
 	Record<string, any>,
 	Prettify<
 		Merge<
-			Merge<
-				MappedFunctionFields<Schema, CollectionItem> extends infer FF
-					? MapFlatFields<
-							RemoveRelationships<Schema, CollectionItem>,
-							FlatFields,
-							FF extends Record<string, string> ? FF : Record<string, string>
-						>
-					: never,
-				ExtractJsonFieldOutput<Fields>
-			>,
+			MappedFunctionFields<Schema, CollectionItem> extends infer FF
+				? MapFlatFields<
+						RemoveRelationships<Schema, CollectionItem>,
+						FlatFields,
+						FF extends Record<string, string> ? FF : Record<string, string>
+					>
+				: never,
 			RelationalFields extends never
 				? never
 				: {
@@ -122,16 +119,7 @@ export type MapFlatFields<
 
 // Possible JSON types
 type JsonPrimitive = null | boolean | number | string;
-export type JsonValue = JsonPrimitive | JsonPrimitive[] | { [key: string]: JsonValue };
-
-/**
- * Build an output record for `json(field, path)` function entries by computing each
- * server-generated alias from the literal field string. Only produces typed keys when
- * Fields contains literal (non-widened) string types.
- */
-type ExtractJsonFieldOutput<Fields> = {
-	[K in Extract<Fields, `json(${string}, ${string})`> as JsonFieldAlias<K>]: JsonValue;
-};
+type JsonValue = JsonPrimitive | JsonPrimitive[] | { [key: string]: JsonValue };
 
 /**
  * Output map for specific literal types

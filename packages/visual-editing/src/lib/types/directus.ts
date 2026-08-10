@@ -36,22 +36,6 @@ export type HighlightElementData = {
 
 export type ConfirmData = {
 	aiEnabled: boolean;
-	theme?: VisualEditingTheme;
-	messages?: VisualEditingMessages;
-};
-
-export type VisualEditingTheme = {
-	primaryColor: string | undefined;
-	primaryAccentColor: string | undefined;
-	borderRadius: string | undefined;
-	buttonSize: string | undefined;
-	focusRingWidth: string | undefined;
-	focusRingOffset: string | undefined;
-};
-
-export type VisualEditingMessages = {
-	edit: string;
-	addToContext: string;
 };
 
 export type ReceiveAction = 'connect' | 'checkFieldAccess' | 'edit' | 'navigation' | 'addToContext';

@@ -1,11 +1,10 @@
 import { Field } from '@directus/types';
-import { getFieldsFromTemplate } from '@directus/utils';
+import { get, getFieldsFromTemplate } from '@directus/utils';
 import { set } from 'lodash';
 import { render, renderFn } from 'micromustache';
 import { computed, ComputedRef, Ref, unref } from 'vue';
 import { useExtension } from '@/composables/use-extension';
 import { useFieldsStore } from '@/stores/fields';
-import { getWithArrayIndex } from '@/utils/get-with-array-index';
 
 type StringTemplate = {
 	fieldsInTemplate: ComputedRef<string[]>;
@@ -13,7 +12,7 @@ type StringTemplate = {
 };
 
 function resolve(path: string, scope: any) {
-	const value = getWithArrayIndex(scope, path);
+	const value = get(scope, path);
 	return typeof value === 'object' ? JSON.stringify(value) : value;
 }
 
@@ -70,7 +69,7 @@ export function renderDisplayStringTemplate(
 	const parsedItem: Record<string, any> = {};
 
 	for (const key of fields) {
-		const value = getWithArrayIndex(item, key);
+		const value = get(item, key);
 
 		const display = useExtension(
 			'display',

@@ -8,6 +8,7 @@ import { onBeforeRouteLeave, onBeforeRouteUpdate, RouterView, useRouter } from '
 import AddFolder from '../components/add-folder.vue';
 import FolderSection from '../components/folder-section.vue';
 import api from '@/api';
+import VBreadcrumb from '@/components/v-breadcrumb.vue';
 import VButton from '@/components/v-button.vue';
 import VCardActions from '@/components/v-card-actions.vue';
 import VCardText from '@/components/v-card-text.vue';
@@ -63,7 +64,7 @@ const confirmDelete = ref(false);
 const batchEditActive = ref(false);
 const isTransitioning = ref(false);
 
-const { title } = useTitle();
+const { breadcrumb, title } = useBreadcrumb();
 
 const folderFilter = computed(() => {
 	return getFolderFilter(props.folder, props.special, userStore?.currentUser?.id);
@@ -166,7 +167,7 @@ async function batchDeleteFiles() {
 	}
 }
 
-function useTitle() {
+function useBreadcrumb() {
 	const title = computed(() => {
 		if (props.special === 'all') {
 			return t('all_files');
@@ -191,7 +192,20 @@ function useTitle() {
 		return t('file_library');
 	});
 
-	return { title };
+	const breadcrumb = computed(() => {
+		if (title.value !== t('file_library')) {
+			return [
+				{
+					name: t('file_library'),
+					to: `/files`,
+				},
+			];
+		}
+
+		return null;
+	});
+
+	return { breadcrumb, title };
 }
 
 function useMovetoFolder() {
@@ -434,6 +448,10 @@ async function downloadFiles() {
 		:reset-preset="resetPreset"
 	>
 		<PrivateView :title="title" icon="folder" :class="{ dragging }">
+			<template v-if="breadcrumb" #headline>
+				<VBreadcrumb :items="breadcrumb" />
+			</template>
+
 			<template #actions:prepend>
 				<component :is="`layout-actions-${layout}`" v-bind="layoutState" />
 			</template>
@@ -455,7 +473,7 @@ async function downloadFiles() {
 							class="folder"
 							:disabled="!batchEditAllowed"
 							icon="folder_move"
-							variant="ghost"
+							secondary
 							@click="on"
 						/>
 					</template>
@@ -486,8 +504,8 @@ async function downloadFiles() {
 							: $t('not_allowed')
 					"
 					:disabled="batchDeleteAllowed !== true || (folderSelection.length > 0 && folderDeleteAllowed !== true)"
-					kind="danger"
-					variant="ghost"
+					class="action-delete"
+					secondary
 					icon="delete"
 					@click="confirmDelete = true"
 				/>
@@ -522,7 +540,7 @@ async function downloadFiles() {
 				<PrivateViewHeaderBarActionButton
 					v-if="selection.length > 0 && folderSelection.length === 0"
 					v-tooltip.bottom="batchEditAllowed ? $t('edit') : $t('not_allowed')"
-					variant="ghost"
+					secondary
 					:disabled="batchEditAllowed === false"
 					icon="edit"
 					@click="batchEditActive = true"
@@ -531,16 +549,13 @@ async function downloadFiles() {
 				<PrivateViewHeaderBarActionButton
 					v-if="selection.length > 0 && folderSelection.length === 0"
 					v-tooltip.bottom="$t('download')"
-					variant="ghost"
+					secondary
 					icon="download"
 					@click="downloadFiles"
 				/>
-			</template>
 
-			<template #actions:primary>
 				<PrivateViewHeaderBarActionButton
-					:tooltip="createAllowed ? undefined : $t('not_allowed')"
-					:label="$t('upload_file')"
+					v-tooltip.bottom="createAllowed ? $t('upload_file') : $t('not_allowed')"
 					:to="folder ? { path: `/files/folders/${folder}/+` } : { path: '/files/+' }"
 					:disabled="createAllowed === false"
 					icon="add"
@@ -639,6 +654,11 @@ async function downloadFiles() {
 </template>
 
 <style lang="scss" scoped>
+.action-delete {
+	--v-button-background-color-hover: var(--theme--danger) !important;
+	--v-button-color-hover: var(--white) !important;
+}
+
 .header-icon {
 	--v-button-color-disabled: var(--theme--foreground);
 }

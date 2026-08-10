@@ -15,7 +15,6 @@ import { unexpectedError } from '@/utils/unexpected-error';
 type UseRevisionsOptions = {
 	action?: Action;
 	full?: boolean;
-	disabled?: Ref<boolean>;
 };
 
 export function useRevisions(
@@ -35,21 +34,7 @@ export function useRevisions(
 	const created = ref<{ id: number }>();
 	const pagesCount = ref(0);
 
-	watch([collection, primaryKey, version], () => {
-		if (options?.disabled?.value) {
-			reset();
-			return;
-		}
-
-		refresh();
-	});
-
-	function reset() {
-		revisions.value = [];
-		revisionsByDate.value = [];
-		revisionsCount.value = 0;
-		pagesCount.value = 0;
-	}
+	watch([collection, primaryKey, version], () => refresh());
 
 	return {
 		created,
@@ -66,7 +51,6 @@ export function useRevisions(
 
 	async function getRevisions(page = 0) {
 		if (typeof unref(primaryKey) === 'undefined') return;
-		if (options?.disabled?.value) return;
 
 		loading.value = true;
 		const pageSize = info.queryLimit?.max && info.queryLimit.max !== -1 ? Math.min(10, info.queryLimit.max) : 10;
@@ -221,7 +205,6 @@ export function useRevisions(
 
 	async function getRevisionsCount() {
 		if (typeof unref(primaryKey) === 'undefined') return;
-		if (options?.disabled?.value) return;
 
 		loadingCount.value = true;
 

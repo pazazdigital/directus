@@ -3,12 +3,10 @@ import { DeepPartial, Field, FieldMeta } from '@directus/types';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import Repeater from './list.vue';
-import VCheckbox from '@/components/v-checkbox.vue';
 import VInput from '@/components/v-input.vue';
 import VSelect from '@/components/v-select/v-select.vue';
 import { FIELD_TYPES_SELECT } from '@/constants';
 import InterfaceSystemInputTranslatedString from '@/interfaces/_system/system-input-translated-string/input-translated-string.vue';
-import { useUserStore } from '@/stores/user';
 import { translate } from '@/utils/translate-object-values';
 
 const props = defineProps<{
@@ -21,7 +19,6 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
-const userStore = useUserStore();
 
 const repeaterValue = computed({
 	get() {
@@ -121,52 +118,6 @@ const repeaterFields: DeepPartial<Field>[] = [
 		},
 	},
 	{
-		name: t('field_name_translations'),
-		field: 'translations',
-		type: 'json',
-		meta: {
-			interface: 'list',
-			width: 'full',
-			sort: 7,
-			options: {
-				template: '[{{ language }}] {{ translation }}',
-				fields: [
-					{
-						field: 'language',
-						type: 'string',
-						name: t('language'),
-						meta: {
-							interface: 'system-language',
-							width: 'full',
-							required: true,
-							display: 'formatted-value',
-							display_options: {
-								font: 'monospace',
-								color: 'var(--theme--foreground-subdued)',
-							},
-						},
-						schema: {
-							default_value: userStore.language,
-						},
-					},
-					{
-						field: 'translation',
-						type: 'string',
-						name: t('translation'),
-						meta: {
-							interface: 'input-multiline',
-							width: 'full',
-							required: true,
-							options: {
-								placeholder: t('translation_placeholder'),
-							},
-						},
-					},
-				],
-			},
-		},
-	},
-	{
 		name: t('interfaces.list.interface_group'),
 		field: 'group-interface',
 		type: 'alias',
@@ -174,7 +125,7 @@ const repeaterFields: DeepPartial<Field>[] = [
 			interface: 'group-detail',
 			field: 'group-interface',
 			width: 'full',
-			sort: 8,
+			sort: 7,
 			options: {
 				start: 'open',
 			},
@@ -189,7 +140,7 @@ const repeaterFields: DeepPartial<Field>[] = [
 		meta: {
 			interface: 'system-interface',
 			width: 'half',
-			sort: 9,
+			sort: 8,
 			group: 'group-interface',
 			options: {
 				typeField: 'type',
@@ -203,7 +154,7 @@ const repeaterFields: DeepPartial<Field>[] = [
 		meta: {
 			interface: 'system-interface-options',
 			width: 'full',
-			sort: 10,
+			sort: 9,
 			group: 'group-interface',
 			options: {
 				interfaceField: 'interface',
@@ -218,7 +169,7 @@ const repeaterFields: DeepPartial<Field>[] = [
 			interface: 'group-detail',
 			field: 'group-display',
 			width: 'full',
-			sort: 11,
+			sort: 10,
 			options: {
 				start: 'closed',
 			},
@@ -234,7 +185,7 @@ const repeaterFields: DeepPartial<Field>[] = [
 			interface: 'system-display',
 			width: 'half',
 			group: 'group-display',
-			sort: 12,
+			sort: 11,
 			options: {
 				typeField: 'type',
 			},
@@ -248,7 +199,7 @@ const repeaterFields: DeepPartial<Field>[] = [
 			interface: 'system-display-options',
 			width: 'full',
 			group: 'group-display',
-			sort: 13,
+			sort: 12,
 			options: {
 				displayField: 'display',
 			},
@@ -292,30 +243,6 @@ const sort = computed({
 	},
 });
 
-const editMode = computed({
-	get() {
-		return props.value?.editMode ?? 'drawer';
-	},
-	set(newEditMode: string) {
-		emit('input', {
-			...(props.value || {}),
-			editMode: newEditMode,
-		});
-	},
-});
-
-const showConfirmDiscard = computed({
-	get() {
-		return props.value?.showConfirmDiscard ?? true;
-	},
-	set(newVal: boolean) {
-		emit('input', {
-			...(props.value || {}),
-			showConfirmDiscard: newVal,
-		});
-	},
-});
-
 const sortFields = computed(() => {
 	if (!repeaterValue.value) return [];
 
@@ -327,29 +254,12 @@ const sortFields = computed(() => {
 
 <template>
 	<div class="grid">
-		<div class="grid-element half-left">
-			<p class="type-label">{{ $t('interfaces.list.edit_mode') }}</p>
-			<VSelect
-				v-model="editMode"
-				class="input"
-				:items="[
-					{ text: $t('interfaces.list.edit_mode_drawer'), value: 'drawer' },
-					{ text: $t('interfaces.list.edit_mode_inline'), value: 'inline' },
-				]"
-			/>
-		</div>
-
-		<div v-if="editMode === 'inline'" class="grid-element half-right">
-			<p class="type-label">&nbsp;</p>
-			<VCheckbox v-model="showConfirmDiscard" :label="$t('interfaces.list.confirm_remove')" block />
-		</div>
-
-		<div class="grid-element half-left">
+		<div class="grid-element half">
 			<p class="type-label">{{ $t('template') }}</p>
 			<VInput v-model="template" class="input" :placeholder="`{{ field }}`" />
 		</div>
 
-		<div class="grid-element half-right">
+		<div class="grid-element half">
 			<p class="type-label">{{ $t('interfaces.list.add_label') }}</p>
 			<InterfaceSystemInputTranslatedString
 				:value="addLabel"

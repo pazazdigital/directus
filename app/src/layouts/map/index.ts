@@ -1,21 +1,20 @@
 import { useCollection, useItems, useSync } from '@directus/composables';
-import { isPublishedVersionKey } from '@directus/constants';
 import { defineLayout } from '@directus/extensions';
 import { Field, Filter, GeometryOptions } from '@directus/types';
 import { getFieldsFromTemplate, mergeFilters } from '@directus/utils';
 import { cloneDeep, merge } from 'lodash';
-import { computed, ref, toRefs, watch } from 'vue';
+import { computed, ref, toRefs, unref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import MapActions from './actions.vue';
 import MapLayout from './map.vue';
 import MapOptions from './options.vue';
 import { getMapStyle } from './style';
 import { LayoutOptions, LayoutQuery } from './types';
 import { useAiToolsStore } from '@/ai/stores/use-ai-tools';
-import { useLayoutClickHandler } from '@/composables/use-layout-click-handler';
-import { useVersionQuery } from '@/composables/use-version-query';
 import { formatItemsCountPaginated, formatItemsCountRelative } from '@/utils/format-items-count';
 import { getGeometryFormatForType, toGeoJSON } from '@/utils/geometry';
+import { getItemRoute } from '@/utils/get-route';
 import { saveAsCSV } from '@/utils/save-as-csv';
 import { syncRefProperty } from '@/utils/sync-ref-property';
 
@@ -24,6 +23,7 @@ export default defineLayout<LayoutOptions, LayoutQuery>({
 	name: '$t:layouts.map.map',
 	icon: 'map',
 	smallHeader: true,
+	sidebarShadow: true,
 	component: MapLayout,
 	slots: {
 		options: MapOptions,
@@ -39,6 +39,7 @@ export default defineLayout<LayoutOptions, LayoutQuery>({
 			}
 		});
 
+		const router = useRouter();
 		const { t, n } = useI18n();
 
 		const selection = useSync(props, 'selection', emit);
@@ -47,12 +48,7 @@ export default defineLayout<LayoutOptions, LayoutQuery>({
 
 		const { collection, filterSystem, search } = toRefs(props);
 
-		const routeVersionKey = useVersionQuery();
-		const versionKey = computed(() => (props.selectMode ? null : routeVersionKey.value));
-
 		const { info, primaryKeyField, fields: fieldsInCollection } = useCollection(collection);
-
-		const { onClick } = useLayoutClickHandler({ props, selection, primaryKeyField, versionKey });
 
 		const page = syncRefProperty(layoutQuery, 'page', 1);
 		const limit = syncRefProperty(layoutQuery, 'limit', 1000);
@@ -168,19 +164,7 @@ export default defineLayout<LayoutOptions, LayoutQuery>({
 				filter: filterWithLocation,
 				fields: queryFields,
 				filterSystem,
-				version: versionKey,
 			});
-
-		const isVersion = computed(() => !!versionKey.value && !isPublishedVersionKey(versionKey.value));
-
-		const itemsOrVersions = computed(() => {
-			if (!isVersion.value) return items.value;
-
-			return items.value.map((item: Record<string, any>) => ({
-				...item,
-				_versionId: item.$meta?.version_id ?? null,
-			}));
-		});
 
 		const geojson = ref<GeoJSON.FeatureCollection>({ type: 'FeatureCollection', features: [] });
 		const geojsonBounds = ref<GeoJSON.BBox>();
@@ -188,7 +172,7 @@ export default defineLayout<LayoutOptions, LayoutQuery>({
 		const geojsonLoading = ref(false);
 
 		watch([search, collection, limit, sort], onQueryChange);
-		watch(itemsOrVersions, updateGeojson);
+		watch(items, updateGeojson);
 
 		watch(geometryField, () => (shouldUpdateCamera.value = true));
 
@@ -203,7 +187,7 @@ export default defineLayout<LayoutOptions, LayoutQuery>({
 					geojson.value = { type: 'FeatureCollection', features: [] };
 					geojsonLoading.value = true;
 					geojsonError.value = null;
-					geojson.value = toGeoJSON(itemsOrVersions.value, geometryOptions.value);
+					geojson.value = toGeoJSON(items.value, geometryOptions.value);
 					geojsonLoading.value = false;
 
 					if (!cameraOptions.value || shouldUpdateCamera.value) {
@@ -248,25 +232,16 @@ export default defineLayout<LayoutOptions, LayoutQuery>({
 			else pushSelection(ids);
 		}
 
-		function handleClick({ id, replace, event }: { id: string | number; replace: boolean; event: MouseEvent }) {
+		function handleClick({ id, replace }: { id: string | number; replace: boolean }) {
 			if (props.selectMode) {
 				handleSelect({ ids: [id], replace });
-				return;
+			} else {
+				router.push(getItemRoute(unref(collection), id));
 			}
-
-			const item = isVersion.value
-				? itemsOrVersions.value.find((item) => item._versionId === id)
-				: items.value.find((item) => primaryKeyField.value && item[primaryKeyField.value.field] === id);
-
-			if (!item) return;
-
-			onClick({ item, event });
 		}
 
 		const featureId = computed(() => {
-			if (props.readonly) return null;
-			if (isVersion.value) return '_versionId';
-			return primaryKeyField.value?.field ?? null;
+			return props.readonly ? null : (primaryKeyField.value?.field ?? null);
 		});
 
 		const showingCount = computed(() => {
@@ -298,12 +273,8 @@ export default defineLayout<LayoutOptions, LayoutQuery>({
 
 		function updateItemPopup(update: Partial<ItemPopup>) {
 			if ('item' in update) {
-				if (isVersion.value) {
-					update.item = itemsOrVersions.value.find((i) => i._versionId === update.item) ?? null;
-				} else {
-					const field = primaryKeyField.value?.field;
-					update.item = !field ? null : (items.value.find((i) => i[field] === update.item) ?? null);
-				}
+				const field = primaryKeyField.value?.field;
+				update.item = !field ? null : (items.value.find((i) => i[field] === update.item) ?? null);
 			}
 
 			itemPopup.value = merge({}, itemPopup.value, update);
@@ -326,7 +297,7 @@ export default defineLayout<LayoutOptions, LayoutQuery>({
 			isGeometryFieldNative,
 			cameraOptions,
 			clusterData,
-			items: itemsOrVersions,
+			items,
 			loading,
 			error,
 			totalPages,
@@ -357,8 +328,8 @@ export default defineLayout<LayoutOptions, LayoutQuery>({
 
 		function refresh() {
 			getItems();
-			getTotalCount(true);
-			getItemCount(true);
+			getTotalCount();
+			getItemCount();
 		}
 
 		function download() {

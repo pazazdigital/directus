@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useCollection } from '@directus/composables';
 import { useShortcut } from '@directus/composables';
-import { USER_INACTIVE_LICENSE_STATUS } from '@directus/constants';
 import type { User } from '@directus/types';
 import { computed, provide, ref, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -9,6 +8,7 @@ import { useRouter } from 'vue-router';
 import UsersNavigation from '../components/navigation.vue';
 import UserInfoSidebarDetail from '../components/user-info-sidebar-detail.vue';
 import { logout } from '@/auth';
+import VBreadcrumb from '@/components/v-breadcrumb.vue';
 import VButton from '@/components/v-button.vue';
 import VCardActions from '@/components/v-card-actions.vue';
 import VCardText from '@/components/v-card-text.vue';
@@ -25,7 +25,6 @@ import { useEditsGuard } from '@/composables/use-edits-guard';
 import { useItem } from '@/composables/use-item';
 import { useCollectionsStore } from '@/stores/collections';
 import { useFieldsStore } from '@/stores/fields';
-import { useLicenseStore } from '@/stores/license';
 import { useServerStore } from '@/stores/server';
 import { useUserStore } from '@/stores/user';
 import { getAssetUrl } from '@/utils/get-asset-url';
@@ -35,7 +34,6 @@ import { PrivateViewHeaderBarActionButton } from '@/views/private';
 import CollabIndicatorHeader from '@/views/private/components/collab/CollabIndicatorHeader.vue';
 import CommentsSidebarDetail from '@/views/private/components/comments-sidebar-detail.vue';
 import ComparisonModal from '@/views/private/components/comparison/comparison-modal.vue';
-import EntitlementLimitModal from '@/views/private/components/license/entitlement-limit-modal.vue';
 import RevisionsSidebarDetail from '@/views/private/components/revisions-sidebar-detail.vue';
 import SaveOptions from '@/views/private/components/save-options.vue';
 
@@ -53,27 +51,10 @@ const fieldsStore = useFieldsStore();
 const collectionsStore = useCollectionsStore();
 const userStore = useUserStore();
 const serverStore = useServerStore();
-const licenseStore = useLicenseStore();
-const seatsLimitModalOpen = ref(false);
-
-async function saveAsInactive() {
-	edits.value = { ...edits.value, status: USER_INACTIVE_LICENSE_STATUS };
-
-	try {
-		const savedItem = await save();
-
-		if (savedItem) {
-			await setLang(savedItem);
-			await refreshCurrentUser();
-			licenseStore.hydrate();
-			router.push({ name: 'users-active' });
-		}
-	} catch {
-		// `save` will show unexpected error dialog
-	}
-}
 
 const { primaryKey } = toRefs(props);
+const { breadcrumb } = useBreadcrumb();
+
 const { info: collectionInfo } = useCollection('directus_users');
 
 const revisionsSidebarDetail = ref<InstanceType<typeof RevisionsSidebarDetail> | null>(null);
@@ -96,25 +77,9 @@ const {
 	validationErrors,
 	refresh,
 	getItem,
-} = useItem<User>(
-	ref('directus_users'),
-	primaryKey,
-	null,
-	computed(() => false),
-	{
-		fields: ['*', 'role.*', 'avatar.id', 'avatar.modified_on'],
-	},
-	{
-		onSaveError: (err) => {
-			if (err?.extensions?.code === 'LIMIT_EXCEEDED') {
-				seatsLimitModalOpen.value = true;
-				return true;
-			}
-
-			return false;
-		},
-	},
-);
+} = useItem<User>(ref('directus_users'), primaryKey, null, {
+	fields: ['*', 'role.*', 'avatar.id', 'avatar.modified_on'],
+});
 
 const {
 	users: collabUsers,
@@ -199,12 +164,22 @@ const archiveTooltip = computed(() => {
 useShortcut('meta+s', saveAndStay, form);
 useShortcut('meta+shift+s', saveAndAddNew, form);
 
+function useBreadcrumb() {
+	const breadcrumb = computed(() => [
+		{
+			name: t('user_directory'),
+			to: `/users`,
+		},
+	]);
+
+	return { breadcrumb };
+}
+
 async function saveAndQuit() {
 	try {
 		const savedItem: Record<string, any> = await save();
 		await setLang(savedItem);
 		await refreshCurrentUser();
-		licenseStore.hydrate();
 		router.push({ name: 'users-active' });
 	} catch {
 		// `save` will show unexpected error dialog
@@ -216,7 +191,6 @@ async function saveAndStay() {
 		const savedItem: Record<string, any> = await save();
 		await setLang(savedItem);
 		await refreshCurrentUser();
-		licenseStore.hydrate();
 
 		if (props.primaryKey === '+') {
 			const newPrimaryKey = savedItem.id;
@@ -235,7 +209,6 @@ async function saveAndAddNew() {
 		const savedItem: Record<string, any> = await save();
 		await setLang(savedItem);
 		await refreshCurrentUser();
-		licenseStore.hydrate();
 		router.push({ name: 'users-item', params: { primaryKey: '+' } });
 	} catch {
 		// `save` will show unexpected error dialog
@@ -245,11 +218,7 @@ async function saveAndAddNew() {
 async function saveAsCopyAndNavigate() {
 	try {
 		const newPrimaryKey = await saveAsCopy();
-
-		if (newPrimaryKey) {
-			licenseStore.hydrate();
-			router.push({ name: 'users-item', params: { primaryKey: newPrimaryKey } });
-		}
+		if (newPrimaryKey) router.push({ name: 'users-item', params: { primaryKey: newPrimaryKey } });
 	} catch {
 		// `save` will show unexpected error dialog
 	}
@@ -269,7 +238,6 @@ async function deleteAndQuit() {
 		}
 
 		await remove();
-		licenseStore.hydrate();
 		edits.value = {};
 		router.replace({ name: 'users-active' });
 	} catch {
@@ -336,16 +304,18 @@ function revert(values: Record<string, any>) {
 
 <template>
 	<PrivateView :title="title" show-back back-to="/users">
-		<template #actions:prepend>
+		<template #headline>
+			<VBreadcrumb :items="breadcrumb" />
+		</template>
+
+		<template #actions>
 			<CollabIndicatorHeader
 				:model-value="collabUsers"
 				:connected="connected"
 				:focuses="focused"
 				:current-connection="connectionId"
 			/>
-		</template>
 
-		<template #actions>
 			<VDialog
 				v-model="confirmDelete"
 				:disabled="deleteAllowed === false"
@@ -355,8 +325,8 @@ function revert(values: Record<string, any>) {
 				<template #activator="{ on }">
 					<PrivateViewHeaderBarActionButton
 						v-tooltip.bottom="deleteAllowed ? $t('delete_label') : $t('not_allowed')"
-						kind="danger"
-						variant="ghost"
+						class="action-delete"
+						secondary
 						:disabled="item === null || deleteAllowed !== true"
 						icon="delete"
 						@click="on"
@@ -388,7 +358,7 @@ function revert(values: Record<string, any>) {
 					<PrivateViewHeaderBarActionButton
 						v-if="collectionInfo.meta && collectionInfo.meta.singleton === false"
 						v-tooltip.bottom="archiveTooltip"
-						variant="ghost"
+						secondary
 						:disabled="item === null || archiveAllowed !== true"
 						:icon="isArchived ? 'unarchive' : 'archive'"
 						@click="on"
@@ -408,19 +378,17 @@ function revert(values: Record<string, any>) {
 					</VCardActions>
 				</VCard>
 			</VDialog>
-		</template>
 
-		<template #actions:primary>
 			<PrivateViewHeaderBarActionButton
-				:label="$t('save')"
-				:tooltip="saveAllowed ? undefined : $t('not_allowed')"
+				v-tooltip.bottom="saveAllowed ? $t('save') : $t('not_allowed')"
 				:loading="saving"
 				:disabled="!isSavable"
 				icon="check"
 				@click="saveAndQuit"
 			>
-				<template #split-menu>
+				<template #append-outer>
 					<SaveOptions
+						v-if="isSavable"
 						:disabled-options="createAllowed ? [] : ['save-and-add-new', 'save-as-copy']"
 						@save-and-stay="saveAndStay"
 						@save-and-add-new="saveAndAddNew"
@@ -522,11 +490,13 @@ function revert(values: Record<string, any>) {
 
 		<ComparisonModal
 			:model-value="collabCollision !== undefined"
-			mode="collab"
 			collection="directus_users"
 			:primary-key="primaryKey"
 			:current-collab="collabCollision"
 			:collab-context="collabContext"
+			mode="collab"
+			:delete-versions-allowed="false"
+			:current-version="null"
 			@confirm="updateCollab"
 			@cancel="clearCollidingChanges"
 		/>
@@ -542,18 +512,16 @@ function revert(values: Record<string, any>) {
 			/>
 			<CommentsSidebarDetail v-if="isNew === false" collection="directus_users" :primary-key="primaryKey" />
 		</template>
-
-		<EntitlementLimitModal
-			v-model="seatsLimitModalOpen"
-			entitlement-key="seats"
-			:is-admin="userStore.isAdmin"
-			:on-save="saveAsInactive"
-		/>
 	</PrivateView>
 </template>
 
 <style lang="scss" scoped>
 @use '@/styles/mixins';
+
+.action-delete {
+	--v-button-background-color-hover: var(--theme--danger) !important;
+	--v-button-color-hover: var(--white) !important;
+}
 
 .header-icon.secondary {
 	--v-button-background-color: var(--theme--background-normal);

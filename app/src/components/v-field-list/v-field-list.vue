@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Field, FieldFunction } from '@directus/types';
+import { Field } from '@directus/types';
 import { debounce, isNil } from 'lodash';
 import { computed, ref, toRefs, unref, watch } from 'vue';
 import VFieldListItem from './VFieldListItem.vue';
@@ -19,12 +19,10 @@ const collectionsStore = useCollectionsStore();
 
 const props = withDefaults(
 	defineProps<{
-		attached?: boolean;
 		collection: string;
 		field?: string;
 		disabledFields?: string[];
 		includeFunctions?: boolean;
-		excludedFunctions?: FieldFunction[];
 		includeRelations?: boolean;
 		injectVersionField?: boolean;
 		relationalFieldSelectable?: boolean;
@@ -36,7 +34,6 @@ const props = withDefaults(
 		field: undefined,
 		disabledFields: () => [],
 		includeFunctions: false,
-		excludedFunctions: () => [],
 		includeRelations: true,
 		injectVersionField: false,
 		relationalFieldSelectable: true,
@@ -160,12 +157,12 @@ function filter(field: Field, parent?: FieldNode): boolean {
 </script>
 
 <template>
-	<VList :class="{ attached }" :mandatory="false" @toggle="loadFieldRelations($event.value)">
+	<VList :mandatory="false" @toggle="loadFieldRelations($event.value)">
 		<slot name="prepend" />
 		<VListItem v-if="showSearch">
 			<VListItemContent>
 				<VInput v-model="search" autofocus small :placeholder="$t('search')" @click.stop>
-					<template #prepend>
+					<template #append>
 						<VIcon small name="search" />
 					</template>
 				</VInput>
@@ -186,7 +183,6 @@ function filter(field: Field, parent?: FieldNode): boolean {
 			:field="fieldNode"
 			:search="search"
 			:include-functions="includeFunctions"
-			:excluded-functions="excludedFunctions"
 			:relational-field-selectable="relationalFieldSelectable"
 			:allow-select-all="allowSelectAll"
 			:raw-field-names="rawFieldNames"
@@ -197,10 +193,6 @@ function filter(field: Field, parent?: FieldNode): boolean {
 
 <style lang="scss" scoped>
 .v-list {
-	--v-list-min-width: var(--form-column-width);
-
-	&.attached {
-		--v-list-min-width: var(--form-column-min-width);
-	}
+	--v-list-min-width: 16.875rem;
 }
 </style>

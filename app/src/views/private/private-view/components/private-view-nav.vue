@@ -1,9 +1,5 @@
 <script setup lang="ts">
-import PrivateViewNavFooter from './private-view-nav-footer.vue';
 import PrivateViewNavProjectName from './private-view-nav-project-name.vue';
-import VLicenseBadge from '@/components/v-license-badge.vue';
-import VNonProductionBadge from '@/components/v-non-production-badge.vue';
-import PinnedStatusNotice from '@/views/private/components/license/pinned-status-notice.vue';
 
 // id attribute for accessibility linking doesn’t work on the top-level element
 defineProps<{ id?: string }>();
@@ -16,12 +12,6 @@ defineProps<{ id?: string }>();
 		<div :id class="module-nav-content">
 			<slot name="navigation" />
 		</div>
-
-		<PrivateViewNavFooter>
-			<PinnedStatusNotice />
-			<VLicenseBadge private />
-			<VNonProductionBadge />
-		</PrivateViewNavFooter>
 	</aside>
 </template>
 
@@ -30,10 +20,9 @@ defineProps<{ id?: string }>();
 	block-size: 100%;
 	inline-size: 100%;
 	position: relative;
-	display: flex;
-	flex-direction: column;
+	display: block;
 	font-size: 0.8125rem;
-	background: var(--theme--shell--background);
+	background: var(--theme--navigation--background);
 }
 
 .module-nav-content {
@@ -52,7 +41,6 @@ defineProps<{ id?: string }>();
 
 	block-size: calc(100% - var(--project-header-height));
 	overflow: hidden auto;
-
-	/* border is set on .main-split */
+	border-inline-end: var(--theme--navigation--border-width) solid var(--theme--navigation--border-color);
 }
 </style>

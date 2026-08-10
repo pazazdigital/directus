@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useElementSize, useSync } from '@directus/composables';
-import { isPublishedVersionKey } from '@directus/constants';
 import type { Field, Filter, Item, ShowSelect } from '@directus/types';
 import { computed, inject, type Ref, ref, watch } from 'vue';
 import Card from './components/card.vue';
@@ -31,7 +30,7 @@ const props = withDefaults(
 		totalPages: number;
 		page: number;
 		toPage: (newPage: number) => void;
-		onClick: (payload: { item: Record<string, any>; event: MouseEvent | KeyboardEvent }) => void;
+		getLinkForItem: (item: Record<string, any>) => string | undefined;
 		fieldsInCollection: Field[];
 		selectAll: () => void;
 		resetPresetAndRefresh: () => Promise<void>;
@@ -51,7 +50,6 @@ const props = withDefaults(
 		search?: string;
 		hasPrependContent?: boolean;
 		extraSelection?: (number | string)[];
-		versionKey?: string | null;
 	}>(),
 	{
 		showSelect: 'multiple',
@@ -116,7 +114,6 @@ function onSelectAll() {
 				v-model:selection="selectionWritable"
 				v-model:extra-selection="extraSelectionWritable"
 				v-model:sort="sortWritable"
-				class="header"
 				:fields="fieldsInCollection"
 				:show-select="showSelect"
 				@select-all="onSelectAll"
@@ -128,16 +125,16 @@ function onSelectAll() {
 				<slot name="prepend" />
 				<Card
 					v-for="item in items"
-					:key="versionKey && !isPublishedVersionKey(versionKey) ? item._versionId : item[primaryKeyField!.field]"
+					:key="item[primaryKeyField!.field]"
 					v-model="selectionWritable"
-					:item-key="versionKey && !isPublishedVersionKey(versionKey) ? '_versionId' : primaryKeyField!.field"
+					:item-key="primaryKeyField!.field"
 					:crop="imageFit === 'crop'"
 					:icon="icon"
 					:file="imageSource ? item[imageSource] : null"
 					:item="item"
 					:select-mode="selectMode || (selection && selection.length > 0)"
+					:to="getLinkForItem(item)"
 					:readonly="readonly"
-					@click="onClick"
 				>
 					<template v-if="title" #title>
 						<RenderTemplate :collection="collection" :item="item" :template="title" />
@@ -178,10 +175,6 @@ function onSelectAll() {
 .layout-cards {
 	padding: var(--content-padding);
 	padding-block-start: 0;
-}
-
-.header {
-	margin-block-end: var(--content-padding);
 }
 
 .grid {

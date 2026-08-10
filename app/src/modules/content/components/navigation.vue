@@ -37,6 +37,7 @@ const rootItems = computed(() => {
 	);
 });
 
+const dense = computed(() => collectionsStore.visibleCollections.length > 5);
 const showSearch = computed(() => collectionsStore.visibleCollections.length > 20);
 
 const hasHiddenCollections = computed(
@@ -47,9 +48,7 @@ const hasHiddenCollections = computed(
 <template>
 	<div class="content-navigation-wrapper">
 		<div v-if="showSearch" class="search-input">
-			<VInput v-model="search" type="search" :placeholder="$t('search_collection')">
-				<template #prepend><VIcon name="search" /></template>
-			</VInput>
+			<VInput v-model="search" type="search" :placeholder="$t('search_collection')" />
 		</div>
 
 		<VList
@@ -60,7 +59,7 @@ const hasHiddenCollections = computed(
 			tabindex="-1"
 			nav
 			:mandatory="false"
-			dense
+			:dense="dense"
 		>
 			<VButton
 				v-if="userStore.isAdmin && collectionsStore.allCollections.length === 0"
@@ -118,25 +117,8 @@ const hasHiddenCollections = computed(
 
 .content-navigation {
 	--v-list-min-height: calc(100% - 3.625rem);
-	--v-list-padding: 0.75rem;
 
 	flex-grow: 1;
-
-	&.nav:deep(.v-list-item:not(.dense)) {
-		padding: 0 0.5rem;
-	}
-
-	:deep(.v-list-item-icon) {
-		margin-block: 0;
-	}
-
-	:deep(.v-list-item-icon:not(:only-child):first-child) {
-		margin-inline-end: 0.5rem;
-	}
-
-	:deep(.v-list-item-content) {
-		padding: 0;
-	}
 
 	.v-detail {
 		:deep(.v-divider) {
@@ -158,14 +140,13 @@ const hasHiddenCollections = computed(
 }
 
 .search-input {
-	--theme--form--field--input--height: 2rem;
-	--theme--form--field--input--padding: 0.5rem;
+	--theme--form--field--input--height: 2.25rem;
 
 	position: sticky;
 	inset-block-start: 0;
 	z-index: 1;
 	padding: 0.6875rem;
 	padding-block-end: 0;
-	background-color: var(--theme--shell--background);
+	background-color: var(--theme--navigation--background);
 }
 </style>

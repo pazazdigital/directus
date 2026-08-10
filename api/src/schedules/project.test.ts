@@ -1,7 +1,6 @@
-import { useEnv } from '@directus/env';
 import knex from 'knex';
 import { createTracker, MockClient } from 'knex-mock-client';
-import { afterEach, beforeEach, expect, test, vi } from 'vitest';
+import { afterEach, expect, test, vi } from 'vitest';
 import getDatabase from '../database/index.js';
 import { sendReport } from '../telemetry/index.js';
 import { scheduleSynchronizedJob } from '../utils/schedule.js';
@@ -10,19 +9,9 @@ import projectSchedule from './project.js';
 // This is required because logger uses global env which is imported before the tests run. Can be
 // reduce to just mock the file when logger is also using useLogger everywhere @TODO
 
-vi.mock('@directus/env', () => ({
-	useEnv: vi.fn().mockReturnValue({
-		EMAIL_TEMPLATES_PATH: './templates',
-	}),
-}));
-
 vi.mock('../database/index.js');
 vi.mock('../telemetry/index.js');
 vi.mock('../utils/schedule.js');
-
-beforeEach(() => {
-	vi.mocked(useEnv).mockReturnValue({ PROJECT_OWNER_ENABLED: true });
-});
 
 let callback: (date: Date) => Promise<void> | void;
 
@@ -42,15 +31,6 @@ vi.mocked(getDatabase).mockReturnValue(db);
 afterEach(() => {
 	tracker.reset();
 	vi.clearAllMocks();
-});
-
-test('Returns early when project owner is disabled', async () => {
-	vi.mocked(useEnv).mockReturnValue({ PROJECT_OWNER_ENABLED: false });
-
-	const res = await projectSchedule();
-
-	expect(scheduleSynchronizedJob).not.toHaveBeenCalled();
-	expect(res).toBe(false);
 });
 
 test('Schedules synchronized job', async () => {

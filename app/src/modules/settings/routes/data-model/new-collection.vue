@@ -19,21 +19,18 @@ import VTabs from '@/components/v-tabs.vue';
 import { useDialogRoute } from '@/composables/use-dialog-route';
 import { useCollectionsStore } from '@/stores/collections';
 import { useFieldsStore } from '@/stores/fields';
-import { useLicenseStore } from '@/stores/license';
 import { useRelationsStore } from '@/stores/relations';
-import { extractErrorCode } from '@/utils/extract-error-code';
 import { notify } from '@/utils/notify';
 import { unexpectedError } from '@/utils/unexpected-error';
 import { PrivateViewHeaderBarActionButton } from '@/views/private';
-import EntitlementLimitModal from '@/views/private/components/license/entitlement-limit-modal.vue';
 
 const defaultSystemFields = {
-	archived: {
+	status: {
 		enabled: false,
 		inputDisabled: false,
-		name: 'archived',
-		label: 'archived',
-		icon: 'archive',
+		name: 'status',
+		label: 'status',
+		icon: 'flag',
 	},
 	sort: {
 		enabled: false,
@@ -78,7 +75,6 @@ const router = useRouter();
 
 const collectionsStore = useCollectionsStore();
 const fieldsStore = useFieldsStore();
-const licenseStore = useLicenseStore();
 const relationsStore = useRelationsStore();
 
 const isOpen = useDialogRoute();
@@ -99,7 +95,6 @@ const unarchiveValue = ref<string>();
 const systemFields = reactive(cloneDeep(defaultSystemFields));
 
 const saving = ref(false);
-const limitModalOpen = ref(false);
 
 watch(() => singleton.value, setOptionsForSingleton);
 
@@ -137,7 +132,7 @@ async function save() {
 			storeHydrations.push(relationsStore.hydrate());
 		}
 
-		storeHydrations.push(collectionsStore.hydrate(), fieldsStore.hydrate(), licenseStore.hydrate());
+		storeHydrations.push(collectionsStore.hydrate(), fieldsStore.hydrate());
 		await Promise.all(storeHydrations);
 
 		notify({
@@ -145,12 +140,8 @@ async function save() {
 		});
 
 		router.replace({ name: 'settings-fields', params: { collection: createdCollectionName } });
-	} catch (error: any) {
-		if (extractErrorCode(error) === 'LIMIT_EXCEEDED') {
-			limitModalOpen.value = true;
-		} else {
-			unexpectedError(error);
-		}
+	} catch (error) {
+		unexpectedError(error);
 	} finally {
 		saving.value = false;
 	}
@@ -208,33 +199,70 @@ function getPrimaryKeyField() {
 function getSystemFields() {
 	const fields: DeepPartial<Field>[] = [];
 
-	// Archived
-	if (systemFields.archived.enabled === true) {
+	// Status
+	if (systemFields.status.enabled === true) {
 		fields.push({
-			field: systemFields.archived.name,
-			type: 'boolean',
+			field: systemFields.status.name,
+			type: 'string',
 			meta: {
-				special: ['cast-boolean'],
-				interface: 'boolean',
-				display: 'boolean',
+				width: 'full',
+				options: {
+					choices: [
+						{
+							text: '$t:published',
+							value: 'published',
+							color: 'var(--theme--primary)',
+						},
+						{
+							text: '$t:draft',
+							value: 'draft',
+							color: 'var(--theme--foreground)',
+						},
+						{
+							text: '$t:archived',
+							value: 'archived',
+							color: 'var(--theme--warning)',
+						},
+					],
+				},
+				interface: 'select-dropdown',
+				display: 'labels',
 				display_options: {
-					iconOn: 'archive',
-					colorOn: 'var(--theme--foreground-subdued)',
-					labelOn: '$t:archived',
-					iconOff: 'unarchive',
-					colorOff: 'transparent',
-					labelOff: '$t:not_archived',
+					showAsDot: true,
+					choices: [
+						{
+							text: '$t:published',
+							value: 'published',
+							color: 'var(--theme--primary)',
+							foreground: 'var(--theme--primary)',
+							background: 'var(--theme--primary-background)',
+						},
+						{
+							text: '$t:draft',
+							value: 'draft',
+							color: 'var(--theme--foreground)',
+							foreground: 'var(--theme--foreground)',
+							background: 'var(--theme--background-normal)',
+						},
+						{
+							text: '$t:archived',
+							value: 'archived',
+							color: 'var(--theme--warning)',
+							foreground: 'var(--theme--warning)',
+							background: 'var(--theme--warning-background)',
+						},
+					],
 				},
 			},
 			schema: {
-				default_value: false,
+				default_value: 'draft',
 				is_nullable: false,
 			},
 		});
 
-		archiveField.value = systemFields.archived.name;
-		archiveValue.value = 'true';
-		unarchiveValue.value = 'false';
+		archiveField.value = systemFields.status.name;
+		archiveValue.value = 'archived';
+		unarchiveValue.value = 'draft';
 	}
 
 	// Sort
@@ -473,10 +501,10 @@ function onApply() {
 			</VTabItem>
 		</VTabsItems>
 
-		<template #actions:primary>
+		<template #actions>
 			<PrivateViewHeaderBarActionButton
 				v-if="currentTab[0] === 'collection_setup'"
-				:label="$t('next')"
+				v-tooltip.bottom="$t('next')"
 				:disabled="!collectionName || collectionName.length === 0"
 				icon="arrow_forward"
 				@click="currentTab = ['optional_system_fields']"
@@ -484,15 +512,13 @@ function onApply() {
 
 			<PrivateViewHeaderBarActionButton
 				v-if="currentTab[0] === 'optional_system_fields'"
-				:label="$t('finish_setup')"
+				v-tooltip.bottom="$t('finish_setup')"
 				:loading="saving"
 				icon="check"
 				@click="save"
 			/>
 		</template>
 	</VDrawer>
-
-	<EntitlementLimitModal v-model="limitModalOpen" entitlement-key="collections" is-admin />
 </template>
 
 <style lang="scss" scoped>

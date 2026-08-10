@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import VButton from '@/components/v-button.vue';
-import VDivider from '@/components/v-divider.vue';
 import VIcon from '@/components/v-icon/v-icon.vue';
 import VListItemContent from '@/components/v-list-item-content.vue';
 import VListItemIcon from '@/components/v-list-item-icon.vue';
@@ -33,24 +32,11 @@ const navItems = computed(() =>
 			{{ $t('create_dashboard') }}
 		</VButton>
 
-		<template v-else>
-			<VListItem :to="{ name: 'insights-overview' }" exact>
-				<VListItemIcon>
-					<VIcon name="insights" />
-				</VListItemIcon>
-				<VListItemContent>
-					{{ $t('overview') }}
-				</VListItemContent>
-			</VListItem>
-
-			<VDivider v-if="navItems.length" />
-
-			<VListItem v-for="navItem in navItems" :key="navItem.to" :to="navItem.to">
-				<VListItemIcon><VIcon :name="navItem.icon" :color="navItem.color" /></VListItemIcon>
-				<VListItemContent>
-					<VTextOverflow :text="navItem.name" />
-				</VListItemContent>
-			</VListItem>
-		</template>
+		<VListItem v-for="navItem in navItems" v-else :key="navItem.to" :to="navItem.to">
+			<VListItemIcon><VIcon :name="navItem.icon" :color="navItem.color" /></VListItemIcon>
+			<VListItemContent>
+				<VTextOverflow :text="navItem.name" />
+			</VListItemContent>
+		</VListItem>
 	</VList>
 </template>

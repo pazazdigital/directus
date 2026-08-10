@@ -7,10 +7,8 @@ export default defineTheme({
 	rules: {
 		borderWidth: '1px',
 		backgroundPage: 'color-mix(in srgb, #FFFFFF, var(--theme--primary) 7%)',
-		shell: {
-			background: '#FFFFFF',
-		},
 		navigation: {
+			background: '#FFFFFF',
 			modules: {
 				background: '#FFFFFF',
 				button: {
@@ -24,7 +22,11 @@ export default defineTheme({
 				borderWidth: '1px',
 				borderColor: 'var(--theme--border-color)',
 			},
-			project: {},
+			project: {
+				borderWidth: '1px',
+				background: '#FFFFFF',
+				borderColor: 'var(--theme--border-color)',
+			},
 			list: {
 				icon: {
 					foreground: '#0F172A',
@@ -36,6 +38,12 @@ export default defineTheme({
 			borderWidth: '1px',
 			backgroundAccent: '#F1F5F9',
 			borderColor: 'var(--theme--border-color)',
+		},
+		header: {
+			background: '#FFFFFF',
+			borderWidth: '1px',
+			borderColor: 'var(--theme--border-color)',
+			boxShadow: '0 4px 7px -4px rgba(0,102,102, 0.1)',
 		},
 		backgroundAccent: '#E2E8F0',
 		backgroundSubdued: '#F8FAFC',
@@ -53,16 +61,28 @@ export default defineTheme({
 				input: {
 					background: '#FFFFFF',
 					backgroundSubdued: '#F8FAFC',
+					boxShadowFocus: 'none',
 					height: '2.9375rem',
 				},
 			},
 		},
 		sidebar: {
+			background: '#FFFFFF',
+			borderWidth: '1px',
+			borderColor: 'var(--theme--border-color)',
 			section: {
 				toggle: {
+					borderColor: 'var(--theme--border-color)',
+					borderWidth: '1px',
+					background: '#FFFFFF',
 					foreground: 'var(--theme--foreground-subdued)',
-					foregroundHover: 'var(--theme--foreground-accent)',
-					foregroundActive: 'var(--theme--foreground)',
+					foregroundHover: 'var(--theme--foreground)',
+					foregroundActive: 'var(--theme--foreground-accent)',
+					icon: {
+						foreground: 'var(--theme--foreground)',
+						foregroundHover: 'var(--theme--foreground)',
+						foregroundActive: 'var(--theme--foreground-accent)',
+					},
 				},
 				form: {
 					field: {

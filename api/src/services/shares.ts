@@ -46,19 +46,15 @@ export class SharesService extends ItemsService {
 	}
 
 	override async updateMany(keys: PrimaryKey[], data: Partial<Item>, opts?: MutationOptions): Promise<PrimaryKey[]> {
-		const primaryKeys = await super.updateMany(keys, data, opts);
-
 		await clearPermissionsCache();
 
-		return primaryKeys;
+		return super.updateMany(keys, data, opts);
 	}
 
 	override async deleteMany(keys: PrimaryKey[], opts?: MutationOptions): Promise<PrimaryKey[]> {
-		const primaryKeys = await super.deleteMany(keys, opts);
-
 		await clearPermissionsCache();
 
-		return primaryKeys;
+		return super.deleteMany(keys, opts);
 	}
 
 	async login(

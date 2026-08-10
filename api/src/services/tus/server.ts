@@ -4,7 +4,6 @@
  * https://tus.io/
  */
 import { useEnv } from '@directus/env';
-import { isDirectusError } from '@directus/errors';
 import type { Driver, TusDriver } from '@directus/storage';
 import { supportsTus } from '@directus/storage';
 import type { Accountability, File, SchemaOverview } from '@directus/types';
@@ -70,32 +69,47 @@ export async function createTusServer(context: Context): Promise<[Server, () => 
 
 			if (!file) return {};
 
-			const targetId = upload.metadata!['id']!;
-			const isReplacement = targetId !== file.id;
+			let fileData;
 
-			let targetFile: File;
-			let uploadFields: Partial<File>;
+			// update metadata when file is replaced
+			if (file.tus_data?.['metadata']?.['replace_id']) {
+				const newFile = await service.readOne(file.tus_data['metadata']['replace_id']);
+				const updateFields = pick(file, ['filename_download', 'filesize', 'type']);
 
-			if (isReplacement) {
-				targetFile = await service.readOne(targetId);
-				uploadFields = pick(file, ['filename_download', 'filesize', 'type']);
-			} else {
-				targetFile = file;
-				// on create, clear tus tracking fields to avoid cleanup
-				uploadFields = { tus_id: null, tus_data: null };
-			}
+				const metadata = await extractMetadata(newFile.storage, {
+					...newFile,
+					...updateFields,
+				});
 
-			const metadata = await extractMetadata(targetFile.storage, { ...targetFile, ...uploadFields });
+				await service.updateOne(file.tus_data['metadata']['replace_id'], {
+					...updateFields,
+					...metadata,
+				});
 
-			await service.updateOne(targetId, { ...uploadFields, ...metadata });
+				fileData = {
+					...newFile,
+					...updateFields,
+					...metadata,
+					id: file.tus_data['metadata']['replace_id'],
+				};
 
-			// Remove the tmp db record created for replacement
-			if (isReplacement) {
 				await service.deleteOne(file.id);
-			}
+			} else {
+				const metadata = await extractMetadata(file.storage, file);
 
-			// Reconstruct full data for event payload
-			const fileData = { ...targetFile, ...uploadFields, ...metadata, id: targetId };
+				await service.updateOne(file.id, {
+					...metadata,
+					tus_id: null,
+					tus_data: null,
+				});
+
+				fileData = {
+					...file,
+					...metadata,
+					tus_id: null,
+					tus_data: null,
+				};
+			}
 
 			emitter.emitAction(
 				'files.upload',
@@ -116,11 +130,6 @@ export async function createTusServer(context: Context): Promise<[Server, () => 
 					'Directus-File-Id': upload.metadata!['id']!,
 				},
 			};
-		},
-		onResponseError(_req, err) {
-			if (isDirectusError(err)) {
-				return { status_code: err.status, body: err.message + '\n' };
-			}
 		},
 		generateUrl(_req, opts) {
 			return env['PUBLIC_URL'] + '/files/tus/' + opts.id;

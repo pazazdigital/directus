@@ -35,16 +35,15 @@ describe('PrivateViewHeaderBarIcon', () => {
 		expect(wrapper.exists()).toBe(true);
 	});
 
-	test('renders back button when back is true', () => {
+	test('renders back button when showBack prop is true', () => {
 		const wrapper = mount(PrivateViewHeaderBarIcon, {
 			...mountOptions,
 			props: {
-				back: true,
-				backTo: '/back',
+				showBack: true,
 			},
 		});
 
-		const backButton = wrapper.findComponent({ name: 'PrivateViewHeaderBarActionButton' });
+		const backButton = wrapper.findComponent({ name: 'VButton' });
 		expect(backButton.exists()).toBe(true);
 		expect(backButton.classes()).toContain('back-button');
 	});
@@ -53,58 +52,43 @@ describe('PrivateViewHeaderBarIcon', () => {
 		const wrapper = mount(PrivateViewHeaderBarIcon, {
 			...mountOptions,
 			props: {
-				back: true,
-				backTo: '/back',
+				showBack: true,
 			},
 		});
 
-		const actionButton = wrapper.findComponent({ name: 'PrivateViewHeaderBarActionButton' });
-		expect(actionButton.props('icon')).toBe('arrow_back');
-		expect(actionButton.props('variant')).toBe('ghost');
+		const backButton = wrapper.findComponent({ name: 'VButton' });
+		expect(backButton.props('rounded')).toBe(true);
+		expect(backButton.props('icon')).toBe(true);
+		expect(backButton.props('secondary')).toBe(true);
+		expect(backButton.props('exact')).toBe(true);
+		expect(backButton.props('small')).toBe(true);
 	});
 
 	test('back button renders arrow_back icon', () => {
 		const wrapper = mount(PrivateViewHeaderBarIcon, {
 			...mountOptions,
 			props: {
-				back: true,
-				backTo: '/back',
+				showBack: true,
 			},
 		});
 
-		const actionButton = wrapper.findComponent({ name: 'PrivateViewHeaderBarActionButton' });
-		expect(actionButton.exists()).toBe(true);
-		expect(actionButton.props('icon')).toBe('arrow_back');
+		const icon = wrapper.findComponent({ name: 'VIcon' });
+		expect(icon.exists()).toBe(true);
+		expect(icon.props('name')).toBe('arrow_back');
+		expect(icon.props('small')).toBe(true);
 	});
 
-	test('back button navigates to backTo route', () => {
+	test('back button navigates to backTo route when provided', () => {
 		const wrapper = mount(PrivateViewHeaderBarIcon, {
 			...mountOptions,
 			props: {
-				back: true,
+				showBack: true,
 				backTo: '/back',
 			},
 		});
 
-		const actionButton = wrapper.findComponent({ name: 'PrivateViewHeaderBarActionButton' });
-		expect(actionButton.props('to')).toBe('/back');
-	});
-
-	test('back button does not call router.back when backTo is provided', async () => {
-		const routerBackSpy = vi.spyOn(router, 'back');
-
-		const wrapper = mount(PrivateViewHeaderBarIcon, {
-			...mountOptions,
-			props: {
-				back: true,
-				backTo: '/back',
-			},
-		});
-
-		const actionButton = wrapper.findComponent({ name: 'PrivateViewHeaderBarActionButton' });
-		await actionButton.trigger('click');
-
-		expect(routerBackSpy).not.toHaveBeenCalled();
+		const backButton = wrapper.findComponent({ name: 'VButton' });
+		expect(backButton.props('to')).toBe('/back');
 	});
 
 	test('back button calls router.back when backTo is not provided', async () => {
@@ -113,20 +97,35 @@ describe('PrivateViewHeaderBarIcon', () => {
 		const wrapper = mount(PrivateViewHeaderBarIcon, {
 			...mountOptions,
 			props: {
-				back: true,
+				showBack: true,
 			},
 		});
 
-		const actionButton = wrapper.findComponent({ name: 'PrivateViewHeaderBarActionButton' });
-		expect(actionButton.exists()).toBe(true);
-		expect(actionButton.props('to')).toBeUndefined();
+		const backButton = wrapper.findComponent({ name: 'VButton' });
 
-		await actionButton.find('button.button').trigger('click');
+		await backButton.find('.button').trigger('click');
 
 		expect(routerBackSpy).toHaveBeenCalled();
 	});
 
-	test('renders icon when icon prop is provided', () => {
+	test('back button does not call router.back when backTo is provided', async () => {
+		const routerBackSpy = vi.spyOn(router, 'back');
+
+		const wrapper = mount(PrivateViewHeaderBarIcon, {
+			...mountOptions,
+			props: {
+				showBack: true,
+				backTo: '/back',
+			},
+		});
+
+		const backButton = wrapper.findComponent({ name: 'VButton' });
+		await backButton.trigger('click');
+
+		expect(routerBackSpy).not.toHaveBeenCalled();
+	});
+
+	test('renders icon div when icon prop is provided', () => {
 		const wrapper = mount(PrivateViewHeaderBarIcon, {
 			...mountOptions,
 			props: {
@@ -134,9 +133,8 @@ describe('PrivateViewHeaderBarIcon', () => {
 			},
 		});
 
-		const icon = wrapper.findComponent({ name: 'VIcon' });
-		expect(icon.exists()).toBe(true);
-		expect(icon.classes()).toContain('icon-only');
+		const iconDiv = wrapper.find('div.icon');
+		expect(iconDiv.exists()).toBe(true);
 	});
 
 	test('renders VIcon with correct props when icon is provided', () => {
@@ -152,9 +150,10 @@ describe('PrivateViewHeaderBarIcon', () => {
 		expect(icon.exists()).toBe(true);
 		expect(icon.props('name')).toBe('edit');
 		expect(icon.props('color')).toBe('blue');
+		expect(icon.props('small')).toBe(true);
 	});
 
-	test('does not render back button when back is not set', () => {
+	test('does not render back button when showBack is false', () => {
 		const wrapper = mount(PrivateViewHeaderBarIcon, {
 			...mountOptions,
 			props: {
@@ -166,43 +165,41 @@ describe('PrivateViewHeaderBarIcon', () => {
 		expect(backButton.exists()).toBe(false);
 	});
 
-	test('does not render icon when back is true', () => {
+	test('does not render icon div when icon is not provided', () => {
 		const wrapper = mount(PrivateViewHeaderBarIcon, {
 			...mountOptions,
 			props: {
-				back: true,
-				backTo: '/back',
+				showBack: true,
 			},
 		});
 
-		const icon = wrapper.find('.icon-only');
-		expect(icon.exists()).toBe(false);
+		const iconDiv = wrapper.find('div.icon');
+		expect(iconDiv.exists()).toBe(false);
 	});
 
-	test('renders nothing when neither back nor icon are provided', () => {
+	test('renders nothing when neither showBack nor icon are provided', () => {
 		const wrapper = mount(PrivateViewHeaderBarIcon, mountOptions);
 
 		const backButton = wrapper.find('.back-button');
-		const icon = wrapper.find('.icon-only');
+		const iconDiv = wrapper.find('div.icon');
 
 		expect(backButton.exists()).toBe(false);
-		expect(icon.exists()).toBe(false);
+		expect(iconDiv.exists()).toBe(false);
 	});
 
-	test('prioritizes back button over icon when both are provided', () => {
+	test('prioritizes showBack over icon when both are provided', () => {
 		const wrapper = mount(PrivateViewHeaderBarIcon, {
 			...mountOptions,
 			props: {
-				back: true,
-				backTo: '/back',
+				showBack: true,
 				icon: 'edit',
 			},
 		});
 
 		const backButton = wrapper.find('.back-button');
-		const icon = wrapper.find('.icon-only');
+		const iconDiv = wrapper.find('div.icon');
 
 		expect(backButton.exists()).toBe(true);
-		expect(icon.exists()).toBe(false);
+		expect(iconDiv.exists()).toBe(false);
 	});
 });

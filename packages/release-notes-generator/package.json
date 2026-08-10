@@ -1,8 +1,8 @@
 {
 	"name": "@directus/release-notes-generator",
-	"version": "3.0.0",
+	"version": "2.0.4",
 	"description": "Directus tailored release notes generator for changesets",
-	"homepage": "https://directus.com",
+	"homepage": "https://directus.io",
 	"type": "module",
 	"repository": {
 		"type": "git",

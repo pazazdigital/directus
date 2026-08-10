@@ -1,6 +1,5 @@
 import { useEnv } from '@directus/env';
 import { clearSystemCache, getCache } from '../../../cache.js';
-import { getEntitlementManager } from '../../../license/index.js';
 import { useLogger } from '../../../logger/index.js';
 
 export default async function cacheClear({ system, data }: { system?: boolean; data?: boolean }): Promise<void> {
@@ -19,8 +18,6 @@ export default async function cacheClear({ system, data }: { system?: boolean; d
 		try {
 			if (clearAll || system) {
 				await clearSystemCache({ forced: true });
-				// publishes on the bus so running server nodes drop their entitlement caches
-				await getEntitlementManager().clearCache();
 			}
 
 			if (clearAll || data) {

@@ -5,7 +5,6 @@ import { fetchPermissions } from '../../permissions/lib/fetch-permissions.js';
 import { fetchPolicies } from '../../permissions/lib/fetch-policies.js';
 import { PayloadService } from '../../services/payload.js';
 import type { AST, FieldNode, FunctionFieldNode, NestedCollectionNode, O2MNode } from '../../types/ast.js';
-import { extractFunctionName } from '../../utils/extract-function-name.js';
 import getDatabase from '../index.js';
 import { getDBQuery } from './lib/get-db-query.js';
 import { parseCurrentLevel } from './lib/parse-current-level.js';
@@ -97,7 +96,7 @@ export async function runAst(
 		const aliasMap: Record<string, string> = { ...query.alias };
 
 		for (const child of children) {
-			if (child.type === 'functionField' && extractFunctionName(child.name) === 'json') {
+			if (child.type === 'functionField' && child.name.startsWith('json(')) {
 				const alias = applyFunctionToColumnName(child.fieldKey);
 				aliasMap[alias] = child.name;
 			}

@@ -5,14 +5,13 @@ import type { DirectusTokenPayload } from '../types/index.js';
 /**
  * Verifies the associated session is still available and valid.
  *
- * @returns The oauth_client for the session, or null for regular sessions.
  * @throws If session not found.
  */
-export async function verifySessionJWT(payload: DirectusTokenPayload): Promise<{ oauth_client: string | null }> {
+export async function verifySessionJWT(payload: DirectusTokenPayload) {
 	const database = getDatabase();
 
 	const session = await database
-		.select('oauth_client')
+		.select(1)
 		.from('directus_sessions')
 		.where({
 			token: payload['session'],
@@ -25,6 +24,4 @@ export async function verifySessionJWT(payload: DirectusTokenPayload): Promise<{
 	if (!session) {
 		throw new InvalidCredentialsError();
 	}
-
-	return { oauth_client: session.oauth_client ?? null };
 }

@@ -1,6 +1,5 @@
 import { parseJsonFunction } from '../../database/helpers/fn/json/parse-function.js';
 import type { FieldNode, FunctionFieldNode, NestedCollectionNode } from '../../types/index.js';
-import { extractFunctionName } from '../../utils/extract-function-name.js';
 import { parseFilterKey } from '../../utils/parse-filter-key.js';
 
 /**
@@ -18,7 +17,7 @@ export function getUnaliasedFieldKey(node: NestedCollectionNode | FieldNode | Fu
 			return parseFilterKey(node.name).fieldName;
 
 		case 'functionField':
-			if (extractFunctionName(node.name) === 'json') {
+			if (node.name.startsWith('json')) {
 				return parseJsonFunction(node.name).field;
 			} else {
 				// The field name might still include a function, so process that here as well

@@ -1,6 +1,6 @@
 services:
   maildev:
-    image: maildev/maildev:2.2.1
+    image: maildev/maildev:latest
     platform: linux/amd64
     ports:
       - '${MAILDEV_WEBUI}:1080' # Web interface

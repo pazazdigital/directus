@@ -110,24 +110,12 @@ export class MailService {
 	}
 
 	private async renderTemplate(template: string, variables: Record<string, any>) {
-		const customTemplatesDir = path.resolve(env['EMAIL_TEMPLATES_PATH'] as string);
-		const systemTemplatesDir = path.resolve(__dirname, 'templates');
+		const customTemplatePath = path.resolve(env['EMAIL_TEMPLATES_PATH'] as string, template + '.liquid');
+		const systemTemplatePath = path.join(__dirname, 'templates', template + '.liquid');
 
-		const customTemplatePath = path.resolve(customTemplatesDir, template + '.liquid');
-		const systemTemplatePath = path.resolve(systemTemplatesDir, template + '.liquid');
+		const templatePath = (await fse.pathExists(customTemplatePath)) ? customTemplatePath : systemTemplatePath;
 
-		// Prevent path traversal: only resolve templates that stay within their own templates directory.
-		const isWithin = (dir: string, candidate: string) => candidate === dir || candidate.startsWith(dir + path.sep);
-
-		let templatePath: string | null = null;
-
-		if (isWithin(customTemplatesDir, customTemplatePath) && (await fse.pathExists(customTemplatePath))) {
-			templatePath = customTemplatePath;
-		} else if (isWithin(systemTemplatesDir, systemTemplatePath) && (await fse.pathExists(systemTemplatePath))) {
-			templatePath = systemTemplatePath;
-		}
-
-		if (templatePath === null) {
+		if ((await fse.pathExists(templatePath)) === false) {
 			throw new InvalidPayloadError({ reason: `Template "${template}" doesn't exist` });
 		}
 

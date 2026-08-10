@@ -3,7 +3,7 @@ import { isSystemCollection } from '@directus/system-data';
 import { Alterations, Field, Item, PrimaryKey, Query, Relation } from '@directus/types';
 import { getEndpoint, isObject } from '@directus/utils';
 import { jsonToGraphQLQuery } from 'json-to-graphql-query';
-import { cloneDeep, isEqual, mergeWith } from 'lodash';
+import { cloneDeep, mergeWith } from 'lodash';
 import { computed, ComputedRef, MaybeRef, ref, Ref, unref, watch } from 'vue';
 import { UsablePermissions, usePermissions } from '../use-permissions';
 import { getGraphqlQueryFields } from './lib/get-graphql-query-fields';
@@ -45,23 +45,15 @@ type UsableItem<T extends Item> = {
 	isArchived: ComputedRef<boolean | null>;
 	archiving: Ref<boolean>;
 	saveAsCopy: () => Promise<PrimaryKey | null>;
-	getItem: (opts?: { silent?: boolean }) => Promise<void>;
+	getItem: () => Promise<void>;
 	validationErrors: Ref<any[]>;
 };
-
-function coerceArchiveValue(value: string | null): string | boolean | null {
-	if (value === 'true') return true;
-	if (value === 'false') return false;
-	return value;
-}
 
 export function useItem<T extends Item>(
 	collection: Ref<string>,
 	primaryKey: Ref<PrimaryKey | null>,
 	currentVersion: Ref<ContentVersionMaybeNew | null> | null = null,
-	isItemlessVersion: ComputedRef<boolean> = computed(() => false),
 	extraQuery: MaybeRef<Omit<Query, 'version' | 'versionRaw'>> = {},
-	saveOptions: { onSaveError?: (error: APIError) => boolean } = {},
 ): UsableItem<T> {
 	const { info: collectionInfo, primaryKeyField } = useCollection(collection);
 	const item: Ref<T | null> = ref(null);
@@ -79,20 +71,18 @@ export function useItem<T extends Item>(
 	const isArchived = computed(() => {
 		if (!collectionInfo.value?.meta?.archive_field) return null;
 
-		const { archive_field, archive_value } = collectionInfo.value.meta;
+		if (collectionInfo.value.meta.archive_value === 'true') {
+			return item.value?.[collectionInfo.value.meta.archive_field] === true;
+		}
 
-		return item.value?.[archive_field] === coerceArchiveValue(archive_value);
+		return item.value?.[collectionInfo.value.meta.archive_field] === collectionInfo.value.meta.archive_value;
 	});
 
-	const query = computed<Query>((prev) => {
+	const query = computed<Query>(() => {
 		const version = unref(currentVersion);
 		const extra = unref(extraQuery);
-
-		const next: Query =
-			!version || version.id === '+' ? { ...extra } : { ...extra, version: version.key, versionRaw: true };
-
-		// Preserve reference on equivalent shapes; otherwise the auto-switch to a new ('+') draft would refetch and disable form fields mid-edit.
-		return prev && isEqual(prev, next) ? prev : next;
+		if (!version || version.id === '+') return { ...extra };
+		return { ...extra, version: version.key, versionRaw: true };
 	});
 
 	const isVersion = computed(() => unref(currentVersion) !== null);
@@ -111,14 +101,7 @@ export function useItem<T extends Item>(
 
 	const defaultValues = getDefaultValuesFromFields(fieldsWithPermissions);
 
-	watch([collection, primaryKey], refresh);
-
-	watch(query, () => {
-		const canRefetchSilently = item.value !== null;
-
-		if (canRefetchSilently) getItem({ silent: true });
-		else refresh();
-	});
+	watch([collection, primaryKey, query], refresh);
 
 	refreshItem();
 
@@ -145,18 +128,13 @@ export function useItem<T extends Item>(
 		validationErrors,
 	};
 
-	async function getItem(opts?: { silent?: boolean }) {
-		if (!opts?.silent) loadingItem.value = true;
+	async function getItem() {
+		loadingItem.value = true;
 		error.value = null;
 
 		try {
-			if (isItemlessVersion.value) {
-				const { delta } = await sdk.request<T>(() => ({ path: `versions/${currentVersion!.value!.id}` }));
-				setItemValueToResponse(delta);
-				return;
-			}
-
 			const item = await sdk.request<T>(requestEndpoint(itemEndpoint.value, { params: unref(query) }));
+
 			setItemValueToResponse(item);
 		} catch (err) {
 			error.value = err;
@@ -443,14 +421,7 @@ export function useItem<T extends Item>(
 
 			const relatedItem = item[relation.meta.junction_field];
 
-			// Only deep-duplicate the related item when it carries edited content. If it's just a PK
-			// reference (e.g. a link-only reorder update), keep the key so the copy re-links to it.
-			const relatedPkField = junctionRelatedPrimaryKeyField?.field;
-			const carriesEditedContent = Object.keys(relatedItem).some((key) => key !== relatedPkField);
-
-			if (!carriesEditedContent) return;
-
-			clearPrimaryKey(junctionRelatedPrimaryKeyField, relatedItem);
+			if (isObject(relatedItem)) clearPrimaryKey(junctionRelatedPrimaryKeyField, relatedItem);
 		}
 	}
 
@@ -465,16 +436,10 @@ export function useItem<T extends Item>(
 			const otherErrors = error.errors.filter((err: APIError) => !VALIDATION_TYPES.includes(err?.extensions?.code));
 
 			if (otherErrors.length > 0) {
-				otherErrors.forEach((err: APIError) => {
-					if (!saveOptions.onSaveError?.(err)) {
-						unexpectedError(err);
-					}
-				});
+				otherErrors.forEach(unexpectedError);
 			}
 		} else {
-			if (!saveOptions.onSaveError?.(error)) {
-				unexpectedError(error);
-			}
+			unexpectedError(error);
 		}
 
 		throw error;
@@ -486,11 +451,20 @@ export function useItem<T extends Item>(
 		archiving.value = true;
 
 		const field = collectionInfo.value.meta.archive_field;
-		const archiveValue = coerceArchiveValue(collectionInfo.value.meta.archive_value);
-		const unarchiveValue = coerceArchiveValue(collectionInfo.value.meta.unarchive_value);
+
+		let archiveValue: any = collectionInfo.value.meta.archive_value;
+		if (archiveValue === 'true') archiveValue = true;
+		if (archiveValue === 'false') archiveValue = false;
+
+		let unarchiveValue: any = collectionInfo.value.meta.unarchive_value;
+		if (unarchiveValue === 'true') unarchiveValue = true;
+		if (unarchiveValue === 'false') unarchiveValue = false;
 
 		try {
-			const value = item.value && item.value[field] === archiveValue ? unarchiveValue : archiveValue;
+			let value: any = item.value && item.value[field] === archiveValue ? unarchiveValue : archiveValue;
+
+			if (value === 'true') value = true;
+			if (value === 'false') value = false;
 
 			await sdk.request(
 				requestEndpoint(itemEndpoint.value, {
@@ -552,7 +526,7 @@ export function useItem<T extends Item>(
 	}
 
 	function refreshItem() {
-		if (isNew.value && !isItemlessVersion.value) {
+		if (isNew.value) {
 			item.value = null;
 		} else {
 			getItem();

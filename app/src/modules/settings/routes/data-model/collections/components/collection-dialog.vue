@@ -13,11 +13,8 @@ import InterfaceList from '@/interfaces/list/list.vue';
 import InterfaceSelectColor from '@/interfaces/select-color/select-color.vue';
 import InterfaceSelectIcon from '@/interfaces/select-icon/select-icon.vue';
 import { useCollectionsStore } from '@/stores/collections';
-import { useLicenseStore } from '@/stores/license';
 import { Collection } from '@/types/collections';
-import { extractErrorCode } from '@/utils/extract-error-code';
 import { unexpectedError } from '@/utils/unexpected-error';
-import EntitlementLimitModal from '@/views/private/components/license/entitlement-limit-modal.vue';
 
 const props = defineProps<{
 	modelValue?: boolean;
@@ -27,7 +24,6 @@ const props = defineProps<{
 const emit = defineEmits(['update:modelValue']);
 
 const collectionsStore = useCollectionsStore();
-const licenseStore = useLicenseStore();
 
 const values = reactive({
 	collection: props.collection?.collection ?? null,
@@ -51,7 +47,6 @@ watch(
 );
 
 const saving = ref(false);
-const limitModalOpen = ref(false);
 
 function cancel() {
 	emit('update:modelValue', false);
@@ -68,16 +63,12 @@ async function save() {
 			await collectionsStore.hydrate();
 		} else {
 			await api.post<any>('/collections', { collection: values.collection, meta: values });
-			await Promise.all([collectionsStore.hydrate(), licenseStore.hydrate()]);
+			await collectionsStore.hydrate();
 		}
 
 		emit('update:modelValue', false);
-	} catch (error: any) {
-		if (extractErrorCode(error) === 'LIMIT_EXCEEDED') {
-			limitModalOpen.value = true;
-		} else {
-			unexpectedError(error);
-		}
+	} catch (error) {
+		unexpectedError(error);
 	} finally {
 		saving.value = false;
 	}
@@ -161,8 +152,6 @@ async function save() {
 			</VCardActions>
 		</VCard>
 	</VDialog>
-
-	<EntitlementLimitModal v-model="limitModalOpen" entitlement-key="collections" is-admin />
 </template>
 
 <style scoped>
