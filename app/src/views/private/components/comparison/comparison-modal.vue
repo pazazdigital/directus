@@ -7,7 +7,11 @@ import { useI18n } from 'vue-i18n';
 import ComparisonHeader from './comparison-header.vue';
 import ComparisonToggle from './comparison-toggle.vue';
 import { useComparison } from './use-comparison';
+import api from '@/api';
 import VButton from '@/components/v-button.vue';
+import VCardActions from '@/components/v-card-actions.vue';
+import VCardTitle from '@/components/v-card-title.vue';
+import VCard from '@/components/v-card.vue';
 import VCheckbox from '@/components/v-checkbox.vue';
 import VDialog from '@/components/v-dialog.vue';
 import VForm from '@/components/v-form/v-form.vue';
@@ -16,16 +20,16 @@ import VSkeletonLoader from '@/components/v-skeleton-loader.vue';
 import { CollabContext } from '@/composables/use-collab';
 import type { Revision } from '@/types/revisions';
 import type { ContentVersionWithType } from '@/types/versions';
+import { unexpectedError } from '@/utils/unexpected-error';
 
 interface Props {
+	deleteVersionsAllowed: boolean;
 	collection: string;
 	primaryKey: PrimaryKey;
 	mode: 'version' | 'revision' | 'collab';
-	currentVersion?: ContentVersionWithType | null | undefined;
-	deleteVersionsAllowed?: boolean;
+	currentVersion: ContentVersionWithType | null | undefined;
+	currentCollab: { from: Item; to: Item } | undefined;
 	revisions?: Revision[] | null;
-	publishVersionLoading?: boolean;
-	currentCollab?: { from: Item; to: Item } | undefined;
 	collabContext?: CollabContext;
 }
 
@@ -35,7 +39,7 @@ const currentRevision = defineModel<Revision | null>('current-revision');
 
 const emit = defineEmits<{
 	cancel: [];
-	publish: [opts: { versionId: string; mainHash: string; fields: string[]; deleteOnPublish: boolean }];
+	promote: [deleteOnPromote: boolean];
 	confirm: [data: Record<string, any>];
 }>();
 
@@ -82,7 +86,7 @@ const {
 
 const incomingTooltipMessage = computed(() => {
 	if (props.mode === 'revision') return `${t('changes_made')} ${t('no_relational_data')}`;
-	if (comparisonData.value?.outdated) return t('published_updated_notice');
+	if (comparisonData.value?.outdated) return t('main_updated_notice');
 	return undefined;
 });
 
@@ -110,7 +114,7 @@ const applyButtonTooltip = computed(() => {
 	return `${t('apply')} (${translateShortcut(['meta', 'enter'])})`;
 });
 
-const { onPublishClick } = usePublish();
+const { confirmDeleteOnPromoteDialogActive, onPromoteClick, promoting, promote } = usePromoteDialog();
 
 const modalLoading = ref(false);
 
@@ -172,50 +176,74 @@ watch([isFirstRevision], () => {
 	}
 });
 
+function usePromoteDialog() {
+	const confirmDeleteOnPromoteDialogActive = ref(false);
+	const promoting = ref(false);
+
+	return { confirmDeleteOnPromoteDialogActive, onPromoteClick, promoting, promote };
+
+	function onPromoteClick() {
+		if (selectedComparisonFields.value.length === 0) return;
+
+		if (deleteVersionsAllowed.value) {
+			confirmDeleteOnPromoteDialogActive.value = true;
+		} else {
+			promote(false);
+		}
+	}
+
+	async function promote(deleteOnPromote: boolean) {
+		if (promoting.value) return;
+
+		promoting.value = true;
+
+		try {
+			if (props.mode === 'version') {
+				// Handle version promotion
+				const versionId = (comparisonData.value!.selectableDeltas?.[0] as ContentVersion)?.id;
+
+				if (versionId) {
+					await api.post(
+						`/versions/${versionId}/promote`,
+						unref(selectedComparisonFields).length > 0
+							? { mainHash: unref(mainHash), fields: unref(selectedComparisonFields) }
+							: { mainHash: unref(mainHash) },
+					);
+				}
+
+				emit('promote', deleteOnPromote);
+			} else {
+				const restoreData: Record<string, any> = {};
+				const selectedFields = unref(selectedComparisonFields);
+
+				// Get the delta from the comparison data
+				const delta = comparisonData.value!.incoming;
+				const base = comparisonData.value!.base;
+
+				for (const [field, newValue] of Object.entries(delta)) {
+					if (selectedFields.length > 0 && !selectedFields.includes(field)) continue;
+					const previousValue = base[field] ?? null;
+					if (isEqual(newValue, previousValue)) continue;
+					restoreData[field] = newValue;
+				}
+
+				emit('confirm', restoreData);
+				emit('cancel');
+			}
+
+			confirmDeleteOnPromoteDialogActive.value = false;
+		} catch (error) {
+			unexpectedError(error);
+		} finally {
+			promoting.value = false;
+		}
+	}
+}
+
 function onIncomingSelectionChange(newDeltaId: PrimaryKey) {
 	if (props.mode !== 'revision') return;
 
 	currentRevision.value = revisions.value?.find((revision) => revision.id === newDeltaId) ?? null;
-}
-
-function usePublish() {
-	return { onPublishClick };
-
-	function onPublishClick() {
-		if (selectedComparisonFields.value.length === 0) return;
-		publish(deleteVersionsAllowed.value);
-	}
-
-	function publish(deleteOnPublish: boolean) {
-		if (props.mode === 'version') {
-			const versionId = (comparisonData.value!.selectableDeltas?.[0] as ContentVersion)?.id;
-
-			if (versionId) {
-				emit('publish', {
-					versionId,
-					mainHash: unref(mainHash),
-					fields: unref(selectedComparisonFields),
-					deleteOnPublish,
-				});
-			}
-		} else {
-			const restoreData: Record<string, any> = {};
-			const selectedFields = unref(selectedComparisonFields);
-
-			const delta = comparisonData.value!.incoming;
-			const base = comparisonData.value!.base;
-
-			for (const [field, newValue] of Object.entries(delta)) {
-				if (selectedFields.length > 0 && !selectedFields.includes(field)) continue;
-				const previousValue = base[field] ?? null;
-				if (isEqual(newValue, previousValue)) continue;
-				restoreData[field] = newValue;
-			}
-
-			emit('confirm', restoreData);
-			emit('cancel');
-		}
-	}
 }
 </script>
 
@@ -226,7 +254,7 @@ function usePublish() {
 		keep-behind
 		@update:model-value="$emit('cancel')"
 		@esc="$emit('cancel')"
-		@apply="onPublishClick"
+		@apply="onPromoteClick"
 	>
 		<div class="comparison-modal">
 			<div class="scrollable-container">
@@ -349,7 +377,11 @@ function usePublish() {
 								</VCheckbox>
 							</div>
 							<div class="buttons-container">
-								<VButton v-tooltip.top="{ text: $t('cancel'), kbd: ['esc'] }" secondary @click="$emit('cancel')">
+								<VButton
+									v-tooltip.top="`${$t('cancel')} (${translateShortcut(['esc'])})`"
+									secondary
+									@click="$emit('cancel')"
+								>
 									<VIcon name="close" left />
 									<span class="button-text">{{ $t(mode === 'collab' ? 'discard' : 'cancel') }}</span>
 								</VButton>
@@ -359,8 +391,8 @@ function usePublish() {
 									:disabled="
 										selectedComparisonFields.length === 0 || (mode === 'revision' && compareToOption === 'Previous')
 									"
-									:loading="publishVersionLoading"
-									@click="onPublishClick"
+									:loading="promoting"
+									@click="onPromoteClick"
 								>
 									<VIcon :name="'arrow_upload_progress'" left />
 									<span class="button-text">
@@ -373,11 +405,30 @@ function usePublish() {
 				</div>
 			</div>
 		</div>
+
+		<VDialog
+			v-model="confirmDeleteOnPromoteDialogActive"
+			@esc="confirmDeleteOnPromoteDialogActive = false"
+			@apply="promote(true)"
+		>
+			<VCard>
+				<VCardTitle>
+					{{ $t('delete_on_apply_copy', { version: deltaDisplayName }) }}
+				</VCardTitle>
+				<VCardActions>
+					<VButton secondary @click="promote(false)">{{ $t('keep') }}</VButton>
+					<VButton :loading="promoting" kind="danger" @click="promote(true)">
+						{{ $t(currentVersion!.type === 'global' ? 'discard_changes' : 'delete_label') }}
+					</VButton>
+				</VCardActions>
+			</VCard>
+		</VDialog>
 	</VDialog>
 </template>
 
 <style lang="scss" scoped>
 .comparison-modal {
+	--header-bar-height: 3.375rem;
 	--comparison-modal--width: max(100% - 8vw, 100% - var(--header-bar-height) * 2);
 	--comparison-modal--height: var(--comparison-modal--width);
 	--comparison-modal--padding-x: 1.5625rem;
@@ -391,6 +442,7 @@ function usePublish() {
 
 	background: var(--theme--background);
 	border-radius: var(--comparison-modal--border-radius);
+	box-shadow: var(--theme--shadow);
 	display: flex;
 	flex-direction: column;
 	block-size: var(--comparison-modal--height);
@@ -417,7 +469,7 @@ function usePublish() {
 	}
 
 	.comparison-content-divider {
-		border-block-start: var(--theme--border-width) solid var(--theme--border-color);
+		border-block-start: 2px solid var(--theme--border-color-subdued);
 	}
 
 	.columns {
@@ -479,7 +531,7 @@ function usePublish() {
 		justify-content: space-between;
 		padding-inline: var(--comparison-modal--padding-x);
 		padding-block: 1rem;
-		border-block-start: var(--theme--border-width) solid var(--theme--border-color);
+		border-block-start: 2px solid var(--theme--border-color-subdued);
 
 		.columns {
 			flex-direction: row;

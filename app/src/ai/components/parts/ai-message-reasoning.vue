@@ -56,7 +56,7 @@ const expandedText = computed(() => {
 	color: var(--theme--foreground);
 
 	.v-icon {
-		align-self: center;
+		margin-block-start: 0.3125rem;
 	}
 
 	&:hover {

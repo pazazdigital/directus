@@ -1,7 +1,6 @@
 import { useEnv } from '@directus/env';
 import { ErrorCode, InvalidPayloadError, isDirectusError } from '@directus/errors';
 import type { Accountability } from '@directus/types';
-import { toBoolean } from '@directus/utils';
 import type { Request } from 'express';
 import { Router } from 'express';
 import {
@@ -12,8 +11,6 @@ import {
 	createSAMLAuthRouter,
 } from '../auth/drivers/index.js';
 import { DEFAULT_AUTH_PROVIDER, REFRESH_COOKIE_OPTIONS, SESSION_COOKIE_OPTIONS } from '../constants.js';
-import { getEntitlementManager } from '../license/index.js';
-import { isSSOBypassAllowed } from '../license/utils/is-sso-bypass-allowed.js';
 import { useLogger } from '../logger/index.js';
 import { respond } from '../middleware/respond.js';
 import { createDefaultAccountability } from '../permissions/utils/create-default-accountability.js';
@@ -66,6 +63,10 @@ for (const authProvider of authProviders) {
 	router.use(`/login/${authProvider.name}`, authRouter);
 }
 
+if (!env['AUTH_DISABLE_DEFAULT']) {
+	router.use('/login', createLocalAuthRouter(DEFAULT_AUTH_PROVIDER));
+}
+
 function getCurrentMode(req: Request): AuthenticationMode {
 	if (req.body.mode) {
 		return req.body.mode as AuthenticationMode;
@@ -98,9 +99,6 @@ function getCurrentRefreshToken(req: Request, mode: AuthenticationMode): string 
 
 	return undefined;
 }
-
-// Always register local auth, blocked at runtime when applicable
-router.use('/login', createLocalAuthRouter(DEFAULT_AUTH_PROVIDER));
 
 router.post(
 	'/refresh',
@@ -257,18 +255,9 @@ router.get(
 		const sessionOnly =
 			'sessionOnly' in req.query && (req.query['sessionOnly'] === '' || Boolean(req.query['sessionOnly']));
 
-		let providers = getAuthProviders({ sessionOnly });
-
-		const isSSOEnabled = getEntitlementManager().isEntitled('sso_enabled');
-
-		// Hide SSO providers when not entitled, unless the license is locked or in the v12 grace period
-		if (providers.length > 0 && !isSSOEnabled) {
-			if (!(await isSSOBypassAllowed())) providers = [];
-		}
-
 		res.locals['payload'] = {
-			data: providers,
-			disableDefault: isSSOEnabled ? toBoolean(env['AUTH_DISABLE_DEFAULT']) : false,
+			data: getAuthProviders({ sessionOnly }),
+			disableDefault: env['AUTH_DISABLE_DEFAULT'],
 		};
 
 		return next();

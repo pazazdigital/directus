@@ -3,7 +3,11 @@ get:
   description: List the settings.
   operationId: getSettings
   parameters:
-    - $ref: '../../openapi.yaml#/components/parameters/Fields'
+    - $ref: '../../openapi.yaml#/components/parameters/Limit'
+    - $ref: '../../openapi.yaml#/components/parameters/Offset'
+
+    - $ref: '../../openapi.yaml#/components/parameters/Meta'
+    - $ref: '../../openapi.yaml#/components/parameters/Page'
   responses:
     '200':
       description: Successful request

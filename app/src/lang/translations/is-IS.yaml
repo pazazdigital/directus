@@ -292,12 +292,6 @@ deselect_all: Afvelja Allt
 other: Annað...
 unknown_user: Óþekktur Notandi
 settings_project: Stillingar
-licensing:
-  addon_update: Uppfæra
-  resolve_section_flows: Flæðir
-  resolve_sso_admin_password: Lykilorð
-  entitlements:
-    flows: Flæðir
 settings_flows: Flæðir
 settings_translations: Þýðingar
 select: Velja...
@@ -321,7 +315,6 @@ fields:
     collection: Safn
     icon: Íkon
     note: Minnispunktur
-    status: Staða
     color: Litur
     hidden: Falið
   directus_files:
@@ -651,5 +644,3 @@ fonts:
   bold: Feitletrað
   italic: Skáletrað
   auto: Sjálfvirkt
-license_grace_key_modal:
-  optional: Valkvætt

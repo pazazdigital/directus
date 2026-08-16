@@ -28,12 +28,11 @@ export default defineTheme({
 				input: { background: '#FFFFFF', backgroundSubdued: 'color-mix(in srgb, #FFFFFF, var(--theme--primary) 13%)' },
 			},
 		},
-		shell: {
+		navigation: {
 			background: '#FFFFFF',
 			backgroundAccent: 'var(--theme--background)',
+			borderWidth: 'var(--theme--border-width)',
 			borderColor: 'var(--theme--border-color-subdued)',
-		},
-		navigation: {
 			modules: {
 				background: 'color-mix(in srgb, #000000, var(--theme--primary) 90%)',
 				button: {
@@ -42,13 +41,39 @@ export default defineTheme({
 					foregroundActive: 'var(--theme--primary)',
 				},
 			},
-			project: {},
+			project: { borderWidth: '1px', background: '#FFFFFF', borderColor: 'var(--theme--border-color-subdued)' },
 			list: {
 				divider: { borderColor: 'var(--theme--border-color-subdued)' },
 				icon: { foreground: 'var(--theme--foreground)' },
 				foreground: 'var(--theme--foreground)',
 				foregroundHover: 'var(--theme--foreground)',
 				foregroundActive: 'var(--theme--foreground)',
+			},
+		},
+		header: {
+			background: '#FFFFFF',
+			borderWidth: '1px',
+			borderColor: 'var(--theme--border-color-subdued)',
+			boxShadow: '0 4px 7px -4px rgba(0,102,102, 0.2)',
+		},
+		sidebar: {
+			background: '#FFFFFF',
+			borderWidth: '1px',
+			borderColor: 'var(--theme--border-color-subdued)',
+			section: {
+				toggle: {
+					borderColor: 'var(--theme--border-color-subdued)',
+					borderWidth: '1px',
+					background: '#FFFFFF',
+					foreground: 'var(--theme--foreground)',
+					foregroundHover: 'var(--theme--foreground)',
+					foregroundActive: 'var(--theme--foreground-accent)',
+					icon: {
+						foreground: 'var(--theme--foreground)',
+						foregroundHover: 'var(--theme--foreground)',
+						foregroundActive: 'var(--theme--foreground-accent)',
+					},
+				},
 			},
 		},
 		public: {

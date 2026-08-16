@@ -146,14 +146,15 @@ function saveOperation() {
 	<VDrawer
 		:model-value="isOpen"
 		:title="$t(operationId === '+' ? 'create_operation' : 'edit_operation')"
+		:subtitle="flow.name"
 		icon="offline_bolt"
 		persistent
 		@cancel="$emit('cancel')"
 		@apply="saveOperation"
 	>
-		<template #actions:primary>
+		<template #actions>
 			<PrivateViewHeaderBarActionButton
-				:label="$t('done')"
+				v-tooltip.bottom="$t('done')"
 				:disabled="saveDisabled"
 				icon="check"
 				@click="saveOperation"

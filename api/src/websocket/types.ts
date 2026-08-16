@@ -5,7 +5,7 @@ import type { WebSocket } from 'ws';
 import type { AuthMode } from './messages.js';
 
 export type AuthenticationState = {
-	accountability: Accountability;
+	accountability: Accountability | null;
 	expires_at: number | null;
 	refresh_token?: string;
 };

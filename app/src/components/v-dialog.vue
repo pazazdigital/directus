@@ -1,16 +1,11 @@
 <script setup lang="ts">
 import { useShortcut } from '@directus/composables';
 import { useFocusTrap } from '@vueuse/integrations/useFocusTrap';
-import { computed, nextTick, onScopeDispose, ref, useTemplateRef, watch } from 'vue';
+import { computed, nextTick, ref, useTemplateRef, watch } from 'vue';
 import TransitionDialog from '@/components/transition/dialog.vue';
 import VOverlay from '@/components/v-overlay.vue';
 import { useDialogRouteLeave } from '@/composables/use-dialog-route';
-import {
-	type DialogTrapHandle,
-	registerDialogTrap,
-	unregisterDialogTrap,
-	useFocusTrapManager,
-} from '@/composables/use-focus-trap-manager';
+import { useFocusTrapManager } from '@/composables/use-focus-trap-manager';
 
 export type ApplyShortcut = 'meta+enter' | 'meta+s';
 
@@ -90,59 +85,24 @@ function nudge() {
 function useOverlayFocusTrap() {
 	const overlayEl = useTemplateRef<HTMLDivElement>('overlayEl');
 	const { addFocusTrap } = useFocusTrapManager();
-	let returnFocusTarget: HTMLElement | null = null;
 
 	const focusTrap = useFocusTrap(overlayEl, {
 		escapeDeactivates: false,
 		initialFocus: false,
-		setReturnFocus: () => (returnFocusTarget && document.contains(returnFocusTarget) ? returnFocusTarget : false),
 	});
 
 	addFocusTrap(focusTrap);
-
-	const trapHandle: DialogTrapHandle = {
-		// mirrors the z-index stacking of the dialog placements in the styles below
-		get zRank() {
-			if (props.placement === 'center') return props.keepBehind ? 500 : 600;
-			return props.keepBehind ? 490 : 500;
-		},
-		reassert() {
-			const focused = document.activeElement;
-
-			focusTrap.deactivate({ returnFocus: false });
-			focusTrap.activate();
-
-			if (focused instanceof HTMLElement && overlayEl.value?.contains(focused)) focused.focus();
-		},
-	};
-
-	watch(
-		internalActive,
-		(newActive) => {
-			if (newActive && document.activeElement instanceof HTMLElement && document.activeElement !== document.body) {
-				returnFocusTarget = document.activeElement;
-			}
-		},
-		{ flush: 'sync' },
-	);
 
 	watch(
 		internalActive,
 		async (newActive) => {
 			await nextTick();
 
-			if (newActive) {
-				focusTrap.activate();
-				registerDialogTrap(trapHandle);
-			} else {
-				unregisterDialogTrap(trapHandle);
-				focusTrap.deactivate();
-			}
+			if (newActive) focusTrap.activate();
+			else focusTrap.deactivate();
 		},
 		{ immediate: true },
 	);
-
-	onScopeDispose(() => unregisterDialogTrap(trapHandle));
 }
 </script>
 

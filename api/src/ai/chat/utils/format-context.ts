@@ -106,6 +106,9 @@ ${promptBlocks}
 	// 2. User context (current page + items)
 	const sections: string[] = [];
 
+	const now = new Date();
+	sections.push(`## Current Date\n${now.toISOString().split('T')[0]}`);
+
 	if (context.page) {
 		const page = context.page;
 		const pageLines = [`Path: ${escapeAngleBrackets(String(page.path))}`];
@@ -127,9 +130,6 @@ Use the items tool to fetch additional fields or update items when asked.
 
 ${itemLines}`);
 	}
-
-	const now = new Date();
-	sections.push(`## Current Date\n${now.toISOString().split('T')[0]}`);
 
 	if (sections.length > 0) {
 		parts.push(`<user_context>\n${sections.join('\n\n')}\n</user_context>`);

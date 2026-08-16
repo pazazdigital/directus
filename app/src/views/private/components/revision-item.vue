@@ -82,13 +82,11 @@ const user = computed(() => {
 
 <style lang="scss" scoped>
 .revision-item {
-	--padding-left: 1.5rem;
-
 	position: relative;
 	display: block;
 	inline-size: 100%;
 	margin-block-end: 0.6875rem;
-	padding-inline-start: var(--padding-left);
+	padding-inline-start: 0.875rem;
 	text-align: start;
 
 	.header {
@@ -99,8 +97,7 @@ const user = computed(() => {
 		.dot {
 			position: absolute;
 			inset-block-start: 0.3125rem;
-			inset-inline-start: calc(-1 * var(--padding-left) + var(--icon-size-default) / 2);
-			transform: translate(-50%, 0);
+			inset-inline-start: -1rem;
 			z-index: 2;
 			inline-size: 0.625rem;
 			block-size: 0.625rem;
@@ -129,10 +126,11 @@ const user = computed(() => {
 	&::before {
 		position: absolute;
 		inset-block-start: -0.25rem;
-		inset-inline: calc(var(--icon-size-default) - 0.125rem) 0;
+		inset-inline-start: 0.6875rem;
 		z-index: 1;
+		inline-size: calc(100% - 0.6875rem);
 		block-size: calc(100% + 0.5625rem);
-		background-color: var(--theme--background-subdued);
+		background-color: var(--theme--background-accent);
 		border-radius: var(--theme--border-radius);
 		opacity: 0;
 		transition: opacity var(--fast) var(--transition);
@@ -143,16 +141,17 @@ const user = computed(() => {
 	&:not(.last)::after {
 		position: absolute;
 		inset-block-start: 0.6875rem;
-		inset-inline-start: calc(var(--icon-size-default) / 2);
-		transform: translate(-50%, 0);
+		inset-inline-start: 0.1875rem;
 		z-index: 1;
-		inline-size: 1px; /* stylelint-disable-line unit-disallowed-list -- hairline */
+		inline-size: 0.0625rem;
 		block-size: calc(100% + 0.6875rem);
 		background-color: var(--theme--background-accent);
 		content: '';
 	}
 
-	&:hover:not(:focus-visible) {
+	&:hover {
+		cursor: pointer;
+
 		.header {
 			.dot {
 				border-color: var(--theme--background-accent);

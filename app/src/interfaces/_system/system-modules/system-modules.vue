@@ -247,8 +247,13 @@ function remove(id: string) {
 			@cancel="editing = null"
 			@apply="save"
 		>
-			<template #actions:primary>
-				<PrivateViewHeaderBarActionButton :label="$t('save')" :disabled="isSaveDisabled" icon="check" @click="save" />
+			<template #actions>
+				<PrivateViewHeaderBarActionButton
+					v-tooltip.bottom="$t('save')"
+					:disabled="isSaveDisabled"
+					icon="check"
+					@click="save"
+				/>
 			</template>
 
 			<div class="drawer-content">

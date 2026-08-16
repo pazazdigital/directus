@@ -11,7 +11,6 @@ import { fromZodError } from 'zod-validation-error';
 import { ASSET_TRANSFORM_QUERY_KEYS, SYSTEM_ASSET_ALLOW_LIST } from '../constants.js';
 import getDatabase from '../database/index.js';
 import { useLogger } from '../logger/index.js';
-import checkIsLocked from '../middleware/is-locked.js';
 import useCollection from '../middleware/use-collection.js';
 import { validateAccess } from '../permissions/modules/validate-access/validate-access.js';
 import { AssetsService } from '../services/assets.js';
@@ -28,7 +27,6 @@ const router = Router();
 const env = useEnv();
 
 router.use(useCollection('directus_files'));
-router.use(checkIsLocked('assets'));
 
 router.post(
 	'/folder/:pk',

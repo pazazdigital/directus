@@ -5,8 +5,6 @@ export type {
 	AddToContextData,
 	HighlightElementData,
 	ConfirmData,
-	VisualEditingTheme,
-	VisualEditingMessages,
 	ReceiveAction,
 	SendAction,
 } from './lib/types/directus.ts';

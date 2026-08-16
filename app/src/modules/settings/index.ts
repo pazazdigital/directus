@@ -9,7 +9,6 @@ import Extensions from './routes/extensions/extensions.vue';
 import FlowOperationDetail from './routes/flows/components/operation-detail.vue';
 import FlowsDetail from './routes/flows/flow.vue';
 import FlowsOverview from './routes/flows/overview.vue';
-import License from './routes/license/license.vue';
 import MarketplaceAccount from './routes/marketplace/routes/account/account.vue';
 import MarketplaceExtension from './routes/marketplace/routes/extension/extension.vue';
 import MarketplaceRegistry from './routes/marketplace/routes/registry/registry.vue';
@@ -33,9 +32,6 @@ import { useFieldsStore } from '@/stores/fields';
 import { useFlowsStore } from '@/stores/flows';
 import RouterPass from '@/utils/router-passthrough';
 
-const McpOAuthClientsCollection = () => import('./routes/mcp-oauth-clients/collection.vue');
-const McpOAuthClientsItem = () => import('./routes/mcp-oauth-clients/item.vue');
-
 export default defineModule({
 	id: 'settings',
 	name: '$t:settings',
@@ -50,11 +46,6 @@ export default defineModule({
 			name: 'settings-project',
 			path: 'project',
 			component: Project,
-		},
-		{
-			name: 'settings-license',
-			path: 'license',
-			component: License,
 		},
 		{
 			name: 'settings-appearance',
@@ -209,11 +200,6 @@ export default defineModule({
 			],
 		},
 		{
-			name: 'settings-license',
-			path: 'license',
-			component: License,
-		},
-		{
 			name: 'settings-ai',
 			path: 'ai',
 			component: AiOverview,
@@ -307,23 +293,6 @@ export default defineModule({
 			name: 'settings-system-logs',
 			path: 'system-logs',
 			component: SystemLogs,
-		},
-		{
-			path: 'mcp-oauth-clients',
-			component: RouterPass,
-			children: [
-				{
-					name: 'settings-mcp-oauth-clients-collection',
-					path: '',
-					component: McpOAuthClientsCollection,
-				},
-				{
-					name: 'settings-mcp-oauth-clients-item',
-					path: ':primaryKey',
-					component: McpOAuthClientsItem,
-					props: true,
-				},
-			],
 		},
 		{
 			name: 'settings-not-found',

@@ -470,26 +470,17 @@ async function exportDataFiles() {
 					</template>
 				</div>
 
-				<div class="field full import-actions">
+				<VCheckbox v-model="backgroundImport" class="background" small full-width :disabled="uploading || importing">
+					{{ $t('import_background') }}
+				</VCheckbox>
+
+				<div class="field full">
 					<VButton small full-width :disabled="!file" :loading="uploading || importing" @click="importData">
 						{{ $t('import_data_button') }}
 					</VButton>
-
-					<VCheckbox
-						v-if="file"
-						v-model="backgroundImport"
-						class="background"
-						small
-						full-width
-						:disabled="uploading || importing"
-					>
-						{{ $t('import_background') }}
-					</VCheckbox>
 				</div>
 
-				<div class="field full">
-					<VDivider />
-				</div>
+				<VDivider />
 			</template>
 
 			<div class="field full">
@@ -518,15 +509,14 @@ async function exportDataFiles() {
 			@cancel="exportDialogActive = false"
 			@apply="startExport"
 		>
-			<template #actions:primary>
+			<template #actions>
 				<PrivateViewHeaderBarActionButton
-					:label="location === 'download' ? $t('download_file') : $t('start_export')"
+					v-tooltip.bottom="location === 'download' ? $t('download_file') : $t('start_export')"
 					:loading="exporting"
 					:icon="location === 'download' ? 'download' : 'start'"
 					@click="startExport"
 				/>
 			</template>
-
 			<div class="export-fields">
 				<div class="field half-left">
 					<p class="type-label">{{ $t('format') }}</p>
@@ -680,8 +670,11 @@ async function exportDataFiles() {
 .v-list-item {
 	&:focus-within,
 	&:focus-visible {
-		outline: var(--focus-ring-width) solid var(--theme--form--field--input--focus-ring-color);
-		outline-offset: var(--focus-ring-offset-invert);
+		--v-list-item-border-color: var(--v-input-border-color-focus, var(--theme--form--field--input--border-color-focus));
+		--v-list-item-border-color-hover: var(--v-list-item-border-color);
+
+		offset: 0;
+		box-shadow: var(--theme--form--field--input--box-shadow-focus);
 	}
 }
 
@@ -706,10 +699,8 @@ async function exportDataFiles() {
 	}
 }
 
-.import-actions {
-	display: flex;
-	flex-direction: column;
-	gap: 0.125rem;
+.background {
+	margin: -1rem 0;
 }
 
 .export-fields {

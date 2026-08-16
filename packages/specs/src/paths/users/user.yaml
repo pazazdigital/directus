@@ -4,6 +4,7 @@ get:
   operationId: getUser
   parameters:
     - $ref: '../../openapi.yaml#/components/parameters/Fields'
+    - $ref: '../../openapi.yaml#/components/parameters/Meta'
   responses:
     '200':
       description: Successful request
@@ -27,6 +28,7 @@ patch:
   operationId: updateUser
   parameters:
     - $ref: '../../openapi.yaml#/components/parameters/Fields'
+    - $ref: '../../openapi.yaml#/components/parameters/Meta'
   requestBody:
     content:
       application/json:
@@ -54,8 +56,8 @@ delete:
   description: Delete an existing user
   operationId: deleteUser
   responses:
-    '204':
-      $ref: '../../openapi.yaml#/components/responses/NoContentResponse'
+    '200':
+      description: Successful request
     '401':
       $ref: '../../openapi.yaml#/components/responses/UnauthorizedError'
     '404':

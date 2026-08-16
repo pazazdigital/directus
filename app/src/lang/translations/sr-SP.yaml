@@ -174,8 +174,6 @@ wysiwyg_options:
   table: Табела
 choices: Избори
 deselect: Поништи избор
-licensing:
-  resolve_sso_admin_password: Лозинка
 settings_presets: Сачуване странице
 discard_changes: Одбаци промене
 keep_editing: Наставите уређивање
@@ -197,7 +195,6 @@ fields:
     ip: ИП адреса
   directus_collections:
     collection: Колекција
-    status: Стање
   directus_files:
     title: Наслов
     description: Опис

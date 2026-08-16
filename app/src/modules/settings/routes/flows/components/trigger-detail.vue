@@ -55,13 +55,14 @@ const currentTriggerOptionFields = computed(() => {
 	<VDrawer
 		:model-value="open"
 		:title="$t('change_trigger')"
+		:subtitle="$t('trigger_options')"
 		icon="offline_bolt"
 		persistent
 		@cancel="$emit('update:open', false)"
 	>
-		<template #actions:primary>
+		<template #actions>
 			<PrivateViewHeaderBarActionButton
-				:label="$t('done')"
+				v-tooltip.bottom="$t('done')"
 				:disabled="!currentTrigger"
 				icon="check"
 				@click="saveTrigger"

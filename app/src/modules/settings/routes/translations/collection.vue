@@ -3,6 +3,7 @@ import { useCollection, useLayout } from '@directus/composables';
 import { computed, ref } from 'vue';
 import SettingsNavigation from '../../components/navigation.vue';
 import api from '@/api';
+import VBreadcrumb from '@/components/v-breadcrumb.vue';
 import VButton from '@/components/v-button.vue';
 import VCardActions from '@/components/v-card-actions.vue';
 import VCardText from '@/components/v-card-text.vue';
@@ -118,6 +119,10 @@ function clearFilters() {
 		:clear-filters="clearFilters"
 	>
 		<PrivateView :title="$t('settings_translations')" icon="translate">
+			<template #headline>
+				<VBreadcrumb :items="[{ name: $t('settings'), to: '/settings' }]" />
+			</template>
+
 			<template #actions:prepend>
 				<component :is="`layout-actions-${layout || 'tabular'}`" v-bind="layoutState" />
 			</template>
@@ -129,8 +134,8 @@ function clearFilters() {
 					<template #activator="{ on }">
 						<PrivateViewHeaderBarActionButton
 							v-tooltip.bottom="$t('delete_label')"
-							kind="danger"
-							variant="ghost"
+							class="action-delete"
+							secondary
 							icon="delete"
 							@click="on"
 						/>
@@ -154,15 +159,12 @@ function clearFilters() {
 					v-if="selection.length > 0"
 					v-tooltip.bottom="$t('edit')"
 					icon="edit"
-					variant="ghost"
+					secondary
 					@click="batchEditActive = true"
 				/>
-			</template>
 
-			<template #actions:primary>
 				<PrivateViewHeaderBarActionButton
-					:tooltip="$t('create_custom_translation')"
-					:label="$t('create')"
+					v-tooltip.bottom="$t('create_custom_translation')"
 					:to="addNewLink"
 					icon="add"
 				/>
@@ -235,6 +237,11 @@ function clearFilters() {
 </template>
 
 <style lang="scss" scoped>
+.action-delete {
+	--v-button-background-color-hover: var(--theme--danger) !important;
+	--v-button-color-hover: var(--white) !important;
+}
+
 .header-icon {
 	--v-button-color-disabled: var(--theme--foreground);
 }

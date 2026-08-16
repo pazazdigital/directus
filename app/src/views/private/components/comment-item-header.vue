@@ -81,9 +81,9 @@ function useDelete() {
 
 <template>
 	<div class="comment-header">
-		<VAvatar x-small round>
+		<VAvatar x-small>
 			<VImage v-if="avatarSource" :src="avatarSource" :alt="userName(comment.user_created)" />
-			<VIcon v-else name="person_outline" small />
+			<VIcon v-else name="person_outline" />
 		</VAvatar>
 
 		<div class="name">
@@ -147,7 +147,7 @@ function useDelete() {
 	.v-avatar {
 		--v-avatar-color: var(--theme--background-accent);
 
-		flex-shrink: 0;
+		flex-basis: 1.375rem;
 		margin-inline-end: 0.4375rem;
 
 		.v-icon {
@@ -171,7 +171,6 @@ function useDelete() {
 			opacity: 0;
 			transition: all var(--slow) var(--transition);
 
-			&:focus-visible,
 			&:hover {
 				color: var(--theme--foreground);
 			}

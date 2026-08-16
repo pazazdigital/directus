@@ -1,4 +1,4 @@
-import { ForbiddenError, ResourceRestrictedError } from '@directus/errors';
+import { ForbiddenError } from '@directus/errors';
 import type {
 	AbstractServiceOptions,
 	Item,
@@ -9,13 +9,8 @@ import type {
 	Query,
 	QueryOptions,
 } from '@directus/types';
-import { omit, uniq } from 'lodash-es';
+import { uniq } from 'lodash-es';
 import { clearSystemCache } from '../cache.js';
-import {
-	hasCustomRule,
-	isRecommendedAppPermission,
-} from '../license/entitlements/lib/custom-permission-rules-enabled.js';
-import { getEntitlementManager } from '../license/index.js';
 import { fetchPermissions } from '../permissions/lib/fetch-permissions.js';
 import { fetchPolicies } from '../permissions/lib/fetch-policies.js';
 import { withAppMinimalPermissions } from '../permissions/lib/with-app-minimal-permissions.js';
@@ -30,7 +25,6 @@ export class PermissionsService extends ItemsService {
 
 	private async clearCaches(opts?: MutationOptions) {
 		await clearSystemCache({ autoPurgeCache: opts?.autoPurgeCache });
-		await getEntitlementManager().clearCache('custom_permission_rules_enabled');
 
 		if (this.cache && opts?.autoPurgeCache !== false) {
 			await this.cache.clear();
@@ -38,55 +32,13 @@ export class PermissionsService extends ItemsService {
 	}
 
 	override async readByQuery(query: Query, opts?: QueryOptions): Promise<Partial<Item>[]> {
-		if (getEntitlementManager().isEntitled('custom_permission_rules_enabled')) {
-			const result = (await super.readByQuery(query, opts)) as Permission[];
-			return withAppMinimalPermissions(this.accountability, result, query.filter);
-		}
-
-		const requiredFields = ['fields', 'permissions', 'validation', 'presets'];
-		let extraFields: string[] = [];
-
-		if (query.fields && !query.fields.includes('*')) {
-			extraFields = requiredFields.filter((f) => !query.fields?.includes(f));
-			query.fields = [...query.fields, ...extraFields];
-		}
-
 		const result = (await super.readByQuery(query, opts)) as Permission[];
 
-		const filteredPermissions = result.filter((p) => !hasCustomRule(p) || isRecommendedAppPermission(p));
-
-		const mappedPermissions: Partial<Permission>[] =
-			extraFields.length > 0 ? filteredPermissions.map((p) => omit(p, extraFields)) : filteredPermissions;
-
-		return withAppMinimalPermissions(this.accountability, mappedPermissions, query.filter);
+		return withAppMinimalPermissions(this.accountability, result, query.filter);
 	}
 
 	override async createOne(data: Partial<Item>, opts?: MutationOptions) {
-		if (
-			!getEntitlementManager().isEntitled('custom_permission_rules_enabled') &&
-			hasCustomRule(data) &&
-			!isRecommendedAppPermission(data)
-		) {
-			throw new ResourceRestrictedError({ category: 'custom_permission_rules_enabled' });
-		}
-
 		const res = await super.createOne(data, opts);
-
-		await this.clearCaches(opts);
-
-		return res;
-	}
-
-	override async updateMany(keys: PrimaryKey[], data: Partial<Item>, opts?: MutationOptions) {
-		if (
-			!getEntitlementManager().isEntitled('custom_permission_rules_enabled') &&
-			hasCustomRule(data) &&
-			!isRecommendedAppPermission(data)
-		) {
-			throw new ResourceRestrictedError({ category: 'custom_permission_rules_enabled' });
-		}
-
-		const res = await super.updateMany(keys, data, opts);
 
 		await this.clearCaches(opts);
 
@@ -103,6 +55,14 @@ export class PermissionsService extends ItemsService {
 
 	override async updateBatch(data: Partial<Item>[], opts?: MutationOptions) {
 		const res = await super.updateBatch(data, opts);
+
+		await this.clearCaches(opts);
+
+		return res;
+	}
+
+	override async updateMany(keys: PrimaryKey[], data: Partial<Item>, opts?: MutationOptions) {
+		const res = await super.updateMany(keys, data, opts);
 
 		await this.clearCaches(opts);
 

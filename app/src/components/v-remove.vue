@@ -139,6 +139,7 @@ function useConfirmation() {
 		v-tooltip="tooltip"
 		v-bind="$attrs"
 		icon
+		rounded
 		:disabled
 		@click.stop="onClick"
 	>

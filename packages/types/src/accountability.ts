@@ -14,9 +14,4 @@ export type Accountability = {
 	userAgent?: string;
 	origin?: string;
 	session?: string;
-	oauth?: {
-		client: string;
-		scopes: string[];
-		aud: string[];
-	};
 };

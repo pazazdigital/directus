@@ -8,6 +8,7 @@ get:
     - Auth: []
   parameters:
     - $ref: '../../openapi.yaml#/components/parameters/Fields'
+    - $ref: '../../openapi.yaml#/components/parameters/Meta'
   responses:
     '200':
       description: Successful request
@@ -29,6 +30,7 @@ patch:
   description: Update an existing preset.
   parameters:
     - $ref: '../../openapi.yaml#/components/parameters/Fields'
+    - $ref: '../../openapi.yaml#/components/parameters/Meta'
   requestBody:
     content:
       application/json:

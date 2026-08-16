@@ -1,8 +1,8 @@
 {
 	"name": "@directus/extensions",
-	"version": "4.0.1",
+	"version": "3.0.25",
 	"description": "Utilities and types for Directus extensions",
-	"homepage": "https://directus.com",
+	"homepage": "https://directus.io",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/directus/directus.git",

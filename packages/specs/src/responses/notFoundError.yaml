@@ -4,7 +4,11 @@ content:
     schema:
       type: object
       properties:
-        errors:
-          type: array
-          items:
-            $ref: '../openapi.yaml#/components/schemas/Error'
+        error:
+          type: object
+          properties:
+            code:
+              type: integer
+              format: int64
+            message:
+              type: string

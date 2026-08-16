@@ -9,8 +9,6 @@ import PQueue from 'p-queue';
 import type { RequestInit } from 'undici';
 import { fetch, FormData } from 'undici';
 import { IMAGE_EXTENSIONS, MINIMUM_CHUNK_SIZE, VIDEO_EXTENSIONS } from './constants.js';
-import { toFormUrlEncoded } from './utils/to-form-url-encoded.js';
-import { toSignatureString } from './utils/to-signature-string.js';
 
 export type DriverCloudinaryConfig = {
 	root?: string;
@@ -48,6 +46,16 @@ export class DriverCloudinary implements TusDriver {
 		return normalizePath(join(this.root, filepath), { removeLeading: true });
 	}
 
+	private toFormUrlEncoded(obj: Record<string, string>, options?: { sort: boolean }) {
+		let entries = Object.entries(obj);
+
+		if (options?.sort) {
+			entries = entries.sort(([keyA], [keyB]) => keyA.localeCompare(keyB));
+		}
+
+		return decodeURIComponent(new URLSearchParams(entries).toString());
+	}
+
 	/**
 	 * Generate the Cloudinary sha256 signature for the given payload
 	 * @see https://cloudinary.com/documentation/signatures
@@ -59,7 +67,7 @@ export class DriverCloudinary implements TusDriver {
 			Object.entries(payload).filter(([key]) => denylist.includes(key) === false),
 		);
 
-		const signaturePayloadString = toSignatureString(signaturePayload);
+		const signaturePayloadString = this.toFormUrlEncoded(signaturePayload, { sort: true });
 
 		return createHash('sha256')
 			.update(signaturePayloadString + this.apiSecret)
@@ -171,7 +179,7 @@ export class DriverCloudinary implements TusDriver {
 
 		const signature = this.getFullSignature(parameters);
 
-		const body = toFormUrlEncoded({
+		const body = this.toFormUrlEncoded({
 			signature,
 			...parameters,
 		});
@@ -224,7 +232,7 @@ export class DriverCloudinary implements TusDriver {
 
 		const signature = this.getFullSignature(parameters);
 
-		const body = toFormUrlEncoded({
+		const body = this.toFormUrlEncoded({
 			...parameters,
 			signature,
 		});
@@ -399,7 +407,7 @@ export class DriverCloudinary implements TusDriver {
 
 		await fetch(url, {
 			method: 'POST',
-			body: toFormUrlEncoded({
+			body: this.toFormUrlEncoded({
 				...parameters,
 				signature,
 			}),

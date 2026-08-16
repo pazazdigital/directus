@@ -222,8 +222,7 @@
 
 .codex-editor .cdx-input:focus,
 .codex-editor .ce-code__textarea:focus {
-	outline: var(--focus-ring-width) solid var(--theme--form--field--input--focus-ring-color);
-	outline-offset: var(--focus-ring-offset-invert);
+	border-color: var(--theme--form--field--input--border-color-focus);
 }
 
 .codex-editor .ce-inline-tool-input {

@@ -25,6 +25,7 @@ patch:
   operationId: updateFlow
   parameters:
     - $ref: '../../openapi.yaml#/components/parameters/Fields'
+    - $ref: '../../openapi.yaml#/components/parameters/Meta'
   requestBody:
     content:
       application/json:

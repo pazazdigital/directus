@@ -16,7 +16,7 @@ import { computed, nextTick, onUnmounted, type Ref, ref, useTemplateRef, watch }
 import TransitionBounce from '@/components/transition/bounce.vue';
 import { useUserStore } from '@/stores/user';
 
-export interface VMenuProps {
+interface Props {
 	/** Where to position the popper */
 	placement?: Placement;
 	/** Model the open state */
@@ -51,9 +51,11 @@ export interface VMenuProps {
 	keepBehind?: boolean;
 	/** Do not focus activator when deactivating focus trap */
 	noFocusReturn?: boolean;
+	/** Invert the menu colors */
+	invert?: boolean;
 }
 
-const props = withDefaults(defineProps<VMenuProps>(), {
+const props = withDefaults(defineProps<Props>(), {
 	placement: 'bottom',
 	modelValue: undefined,
 	closeOnClick: true,
@@ -63,6 +65,7 @@ const props = withDefaults(defineProps<VMenuProps>(), {
 	delay: 0,
 	offsetY: 8,
 	offsetX: 0,
+	invert: false,
 });
 
 const emit = defineEmits(['update:modelValue']);
@@ -349,10 +352,7 @@ function usePopper(
 			{
 				...offset,
 				options: {
-					offset:
-						options.value.attached && !options.value.arrow
-							? [0, 0]
-							: [options.value.offsetX ?? 0, options.value.offsetY ?? padding],
+					offset: options.value.attached ? [0, 0] : [options.value.offsetX ?? 0, options.value.offsetY ?? padding],
 				},
 			},
 			{
@@ -487,7 +487,7 @@ function usePopper(
 						events: ['click'],
 					}"
 					class="v-menu-popper"
-					:class="{ active: isActive, attached, 'keep-behind': keepBehind }"
+					:class="{ active: isActive, attached, 'keep-behind': keepBehind, invert }"
 					:data-placement="popperPlacement"
 					:style="styles"
 				>
@@ -542,6 +542,11 @@ function usePopper(
 
 	&.keep-behind {
 		z-index: 490;
+	}
+
+	&.invert {
+		--theme--popover--menu--background: var(--background-inverted);
+		--theme--popover--menu--foreground: var(--foreground-inverted);
 	}
 }
 
@@ -725,13 +730,13 @@ function usePopper(
 }
 
 .attached {
-	&:not(:has(.arrow))[data-placement^='top'] {
+	&[data-placement^='top'] {
 		> .v-menu-content {
 			transform: translateY(-0.125rem);
 		}
 	}
 
-	&:not(:has(.arrow))[data-placement^='bottom'] {
+	&[data-placement^='bottom'] {
 		> .v-menu-content {
 			transform: translateY(0.125rem);
 		}

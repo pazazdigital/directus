@@ -299,16 +299,7 @@ router.post(
 			schema: req.schema,
 		});
 
-		try {
-			await service.inviteUser(req.body.email, req.body.role, req.body.invite_url || null);
-		} catch (error) {
-			if (isDirectusError(error, ErrorCode.Forbidden)) {
-				return next();
-			}
-
-			throw error;
-		}
-
+		await service.inviteUser(req.body.email, req.body.role, req.body.invite_url || null);
 		return next();
 	}),
 	respond,

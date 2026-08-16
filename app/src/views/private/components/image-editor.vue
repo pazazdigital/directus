@@ -510,8 +510,8 @@ function setAspectRatio() {
 			<slot name="activator" v-bind="activatorBinding" />
 		</template>
 
-		<template #title-outer:append>
-			<VIcon v-tooltip.bottom="$t('changes_are_permanent')" name="error" class="warning-icon" />
+		<template #subtitle>
+			<span class="warning">{{ $t('changes_are_permanent') }}</span>
 		</template>
 
 		<div v-if="loading" class="loader">
@@ -634,21 +634,27 @@ function setAspectRatio() {
 			</div>
 		</div>
 
-		<template #actions:primary>
+		<template #actions>
 			<PrivateViewHeaderBarActionButton
-				:label="$t('save')"
+				v-tooltip.bottom="$t('save')"
 				:loading="saving"
 				:disabled="!hasEdits"
 				icon="check"
 				@click="save"
 			>
-				<template v-if="props.createAllowed" #split-menu>
-					<VList>
-						<VListItem clickable @click="saveAsNew">
-							<VListItemIcon><VIcon name="add_photo_alternate" /></VListItemIcon>
-							<VListItemContent>{{ $t('save_as_new_file') }}</VListItemContent>
-						</VListItem>
-					</VList>
+				<template v-if="props.createAllowed" #append-outer>
+					<VMenu show-arrow placement="bottom-end">
+						<template #activator="{ toggle }">
+							<VIcon name="more_vert" clickable @click="toggle" />
+						</template>
+
+						<VList>
+							<VListItem :disabled="!hasEdits" clickable @click="saveAsNew">
+								<VListItemIcon><VIcon name="add_photo_alternate" /></VListItemIcon>
+								<VListItemContent>{{ $t('save_as_new_file') }}</VListItemContent>
+							</VListItem>
+						</VList>
+					</VMenu>
 				</template>
 			</PrivateViewHeaderBarActionButton>
 		</template>
@@ -679,7 +685,7 @@ function setAspectRatio() {
 
 .editor-container {
 	inline-size: 100%;
-	block-size: 100%;
+	block-size: calc(100% - (3.6875rem + 1.375rem + 1.375rem)); /* header height + 2x margin */
 	overflow: hidden;
 	background-color: var(--theme--background-subdued);
 
@@ -728,12 +734,8 @@ function setAspectRatio() {
 	font-feature-settings: 'tnum';
 }
 
-.warning-icon {
-	--v-icon-color: var(--theme--foreground-subdued);
-
-	&:hover {
-		--v-icon-color: var(--theme--warning);
-	}
+.warning {
+	color: var(--theme--warning);
 }
 
 .toolbar-button {

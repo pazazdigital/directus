@@ -12,9 +12,8 @@ vi.mock('@reach/observe-rect', () => ({
 }));
 
 vi.mock('./directus-frame.ts', () => ({
-	DirectusFrame: vi.fn(function (this: { isAiEnabled: () => boolean; getMessages: () => null; send: () => void }) {
+	DirectusFrame: vi.fn(function (this: { isAiEnabled: () => boolean; send: () => void }) {
 		this.isAiEnabled = () => false;
-		this.getMessages = () => null;
 		this.send = vi.fn();
 	}),
 }));

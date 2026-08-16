@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useNavBarStore } from '../stores/nav-bar';
-import PrivateViewHeaderBarActionButton from './private-view-header-bar-action-button.vue';
+import VIcon from '@/components/v-icon/v-icon.vue';
 import VTextOverflow from '@/components/v-text-overflow.vue';
 import { useServerStore } from '@/stores/server';
 
@@ -19,10 +19,11 @@ const navBarStore = useNavBarStore();
 			<VTextOverflow v-if="descriptor" class="descriptor" :text="descriptor" placement="bottom" />
 		</div>
 
-		<PrivateViewHeaderBarActionButton
+		<VIcon
 			v-tooltip.bottom="$t('toggle_navigation')"
-			icon="left_panel_close"
-			variant="ghost"
+			small
+			name="left_panel_close"
+			clickable
 			class="nav-toggle"
 			@click="navBarStore.collapse"
 		/>
@@ -36,16 +37,18 @@ const navBarStore = useNavBarStore();
 	align-items: center;
 	inline-size: 100%;
 	block-size: 3.375rem;
-	flex-shrink: 0;
-	padding-inline: 1.25rem 0.75rem;
+	padding-inline: 1.125rem 0.875rem; // optically match contents of navigation bar
 	color: var(--theme--navigation--project--foreground);
 	text-align: start;
-	background: transparent;
+	background: var(--theme--navigation--project--background);
+	border-block-end: var(--theme--navigation--project--border-width) solid
+		var(--theme--navigation--project--border-color);
+	border-inline-end: var(--theme--navigation--border-width) solid var(--theme--navigation--border-color);
 
 	.name-container {
 		flex-grow: 1;
 		inline-size: 5.625rem;
-		padding-inline-end: 0.75rem;
+		line-height: 1.3;
 	}
 
 	.name {
@@ -58,6 +61,6 @@ const navBarStore = useNavBarStore();
 }
 
 .nav-toggle {
-	margin-inline-end: 0.125rem;
+	margin-inline-end: 0.4375rem; // Optically center with header bar icon
 }
 </style>

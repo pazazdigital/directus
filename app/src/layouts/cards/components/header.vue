@@ -7,7 +7,6 @@ import VListItemContent from '@/components/v-list-item-content.vue';
 import VListItem from '@/components/v-list-item.vue';
 import VList from '@/components/v-list.vue';
 import VMenu from '@/components/v-menu.vue';
-import SubHeader from '@/views/private/components/sub-header.vue';
 
 const props = withDefaults(
 	defineProps<{
@@ -79,8 +78,8 @@ function onClickSelect() {
 </script>
 
 <template>
-	<SubHeader>
-		<template #start>
+	<div class="cards-header">
+		<div class="start">
 			<button type="button" :class="{ 'no-selection': !totalSelectionCount }" @click="onClickSelect">
 				<template v-if="totalSelectionCount">
 					<VIcon name="cancel" outline />
@@ -91,8 +90,8 @@ function onClickSelect() {
 					<span class="label">{{ $t(showSelect === 'multiple' ? 'select_all' : 'select_an_item') }}</span>
 				</template>
 			</button>
-		</template>
-		<template #end>
+		</div>
+		<div class="end">
 			<VIcon
 				v-tooltip.top="$t('card_size')"
 				class="size-selector"
@@ -129,11 +128,28 @@ function onClickSelect() {
 				clickable
 				@click="toggleDescending"
 			/>
-		</template>
-	</SubHeader>
+		</div>
+	</div>
 </template>
 
 <style lang="scss" scoped>
+.cards-header {
+	position: sticky;
+	inset-block-start: var(--layout-offset-top);
+	z-index: 4;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	inline-size: 100%;
+	block-size: 2.9375rem;
+	margin-block-end: 2rem;
+	padding: 0 0.4375rem;
+	background-color: var(--theme--background);
+	border-block-start: var(--theme--border-width) solid var(--theme--border-color-subdued);
+	border-block-end: var(--theme--border-width) solid var(--theme--border-color-subdued);
+	box-shadow: 0 0 0 2px var(--theme--background);
+}
+
 .start {
 	.label {
 		display: inline-block;
@@ -154,10 +170,10 @@ function onClickSelect() {
 .end {
 	display: flex;
 	align-items: center;
+	color: var(--theme--foreground-subdued);
 
 	.size-selector {
 		margin-inline-end: 0.875rem;
-		color: var(--theme--foreground-subdued);
 		transition: color var(--fast) var(--transition);
 
 		&:hover {
@@ -167,7 +183,6 @@ function onClickSelect() {
 
 	.sort-selector {
 		margin-inline-end: 0.4375rem;
-		color: var(--theme--foreground-subdued);
 		transition: color var(--fast) var(--transition);
 
 		&:hover {
@@ -176,7 +191,6 @@ function onClickSelect() {
 	}
 
 	.sort-direction {
-		color: var(--theme--foreground-subdued);
 		transition: color var(--fast) var(--transition);
 
 		&.descending {

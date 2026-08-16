@@ -5,8 +5,8 @@ export default defineTheme({
 	name: '$t:theme_directus_default',
 	appearance: 'dark',
 	rules: {
-		borderRadius: '0.375rem',
-		borderWidth: '1px',
+		borderRadius: '0.3125rem',
+		borderWidth: '2px',
 
 		foreground: '#c9d1d9',
 		foregroundAccent: '#f0f6fc',
@@ -51,10 +51,6 @@ export default defineTheme({
 				fontFamily: '"Inter", system-ui',
 				fontWeight: '700',
 			},
-			title: {
-				fontFamily: '"Inter", system-ui',
-				fontWeight: '600',
-			},
 			sans: {
 				fontFamily: '"Inter", system-ui',
 				fontWeight: '500',
@@ -69,15 +65,17 @@ export default defineTheme({
 			},
 		},
 
-		shell: {
-			background: 'var(--theme--background-subdued)',
-			backgroundAccent: '#30363d',
-			borderColor: 'var(--theme--border-color)',
-			borderWidth: 'var(--theme--border-width)',
-		},
-
 		navigation: {
+			background: '#21262e',
+			backgroundAccent: '#30363d',
+
+			borderColor: 'transparent',
+			borderWidth: '0px',
+
 			project: {
+				borderColor: 'transparent',
+				borderWidth: '0px',
+				background: '#30363d',
 				foreground: 'var(--theme--foreground-accent)',
 				fontFamily: 'var(--theme--fonts--sans--font-family)',
 			},
@@ -123,15 +121,23 @@ export default defineTheme({
 		},
 
 		header: {
+			background: 'var(--theme--background)',
+			borderColor: 'transparent',
+			borderWidth: '0px',
+			boxShadow: '0 4px 7px -4px black',
+			headline: {
+				foreground: 'var(--theme--foreground-subdued)',
+				fontFamily: 'var(--theme--fonts--sans--font-family)',
+			},
 			title: {
-				foreground: 'var(--theme--foreground)',
-				fontFamily: 'var(--theme--fonts--title--font-family)',
-				fontWeight: 'var(--theme--fonts--title--font-weight)',
+				foreground: 'var(--theme--foreground-accent)',
+				fontFamily: 'var(--theme--fonts--display--font-family)',
+				fontWeight: 'var(--theme--fonts--display--font-weight)',
 			},
 		},
 
 		form: {
-			columnGap: '1.75rem',
+			columnGap: '1.8125rem',
 			rowGap: '2.25rem',
 
 			field: {
@@ -149,10 +155,11 @@ export default defineTheme({
 
 					borderColor: '#21262e',
 					borderColorHover: '#30363d',
-
-					focusRingColor: 'var(--theme--primary)',
+					borderColorFocus: 'var(--theme--primary)',
 
 					boxShadow: 'none',
+					boxShadowHover: 'none',
+					boxShadowFocus: '0 0 16px -8px var(--theme--primary)',
 
 					height: '3.375rem',
 					padding: '0.875rem',
@@ -161,37 +168,32 @@ export default defineTheme({
 		},
 
 		sidebar: {
-			background: 'var(--theme--background)',
-			foreground: 'var(--theme--foreground)',
+			background: '#21262e',
+			foreground: 'var(--theme--foreground-subdued)',
 			fontFamily: 'var(--theme--fonts--sans--font-family)',
-			borderColor: 'var(--theme--border-color)',
-			borderWidth: 'var(--theme--border-width)',
+			borderColor: 'transparent',
+			borderWidth: '0px',
 
 			section: {
-				borderWidth: 'var(--theme--sidebar--border-width)',
-				borderColor: 'transparent',
-
-				active: {
-					borderWidth: 'var(--theme--sidebar--section--border-width)',
-					borderColor: 'var(--theme--sidebar--border-color)',
-				},
-
 				toggle: {
 					icon: {
-						foreground: 'var(--theme--sidebar--foreground)',
-						foregroundHover: 'var(--theme--sidebar--section--toggle--foreground-hover)',
-						foregroundActive: 'var(--theme--sidebar--section--toggle--foreground-active)',
+						foreground: 'var(--theme--foreground-accent)',
+						foregroundHover: 'var(--theme--sidebar--section--toggle--icon--foreground)',
+						foregroundActive: 'var(--theme--sidebar--section--toggle--icon--foreground)',
 					},
 
-					foreground: 'var(--theme--sidebar--foreground)',
-					foregroundHover: 'var(--theme--foreground-accent)',
+					foreground: 'var(--theme--foreground-accent)',
+					foregroundHover: 'var(--theme--sidebar--section--toggle--foreground)',
 					foregroundActive: 'var(--theme--sidebar--section--toggle--foreground)',
 
-					background: 'var(--theme--sidebar--background)',
+					background: '#30363d',
 					backgroundHover: 'var(--theme--sidebar--section--toggle--background)',
 					backgroundActive: 'var(--theme--sidebar--section--toggle--background)',
 
 					fontFamily: 'var(--theme--fonts--sans--font-family)',
+
+					borderColor: 'transparent',
+					borderWidth: '0px',
 				},
 
 				form: {
@@ -211,10 +213,11 @@ export default defineTheme({
 
 							borderColor: 'var(--theme--form--field--input--border-color)',
 							borderColorHover: 'var(--theme--form--field--input--border-color-hover)',
-
-							focusRingColor: 'var(--theme--form--field--input--focus-ring-color)',
+							borderColorFocus: 'var(--theme--form--field--input--border-color-focus)',
 
 							boxShadow: 'var(--theme--form--field--input--box-shadow)',
+							boxShadowHover: 'var(--theme--form--field--input--box-shadow-hover)',
+							boxShadowFocus: 'var(--theme--form--field--input--box-shadow-focus)',
 
 							height: '2.9375rem',
 							padding: '0.6875rem',
@@ -253,10 +256,11 @@ export default defineTheme({
 
 						borderColor: 'var(--theme--form--field--input--border-color)',
 						borderColorHover: 'var(--theme--form--field--input--border-color-hover)',
-
-						focusRingColor: 'var(--theme--form--field--input--focus-ring-color)',
+						borderColorFocus: 'var(--theme--form--field--input--border-color-focus)',
 
 						boxShadow: 'var(--theme--form--field--input--box-shadow)',
+						boxShadowHover: 'var(--theme--form--field--input--box-shadow-hover)',
+						boxShadowFocus: 'var(--theme--form--field--input--box-shadow-focus)',
 
 						height: 'var(--theme--form--field--input--height)',
 						padding: 'var(--theme--form--field--input--padding)',

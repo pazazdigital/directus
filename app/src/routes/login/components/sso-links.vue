@@ -233,11 +233,13 @@ watch(selectedProviderName, (val) => {
 }
 
 .sso-link {
+	$sso-link-border-width: 2px; /* stylelint-disable-line unit-disallowed-list -- SCSS variable for border calc */
+
 	display: flex;
 	inline-size: 100%;
 	block-size: var(--theme--form--field--input--height);
 	background-color: var(--theme--background-normal);
-	border: var(--theme--border-width) var(--theme--background-normal) solid;
+	border: $sso-link-border-width var(--theme--background-normal) solid;
 	border-radius: var(--theme--border-radius);
 	transition: border-color var(--fast) var(--transition);
 	cursor: pointer;
@@ -249,7 +251,7 @@ watch(selectedProviderName, (val) => {
 		align-items: center;
 		justify-content: center;
 		inline-size: var(--theme--form--field--input--height);
-		margin: calc(-1 * var(--theme--border-width));
+		margin: -$sso-link-border-width;
 		background-color: var(--theme--background-accent);
 		border-radius: var(--theme--border-radius);
 	}

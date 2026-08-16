@@ -5,14 +5,7 @@ import type {
 	SavedData,
 } from './directus.ts';
 
-export type {
-	SavedData,
-	HighlightElementData,
-	ConfirmData,
-	CheckFieldAccessData,
-	VisualEditingTheme,
-	VisualEditingMessages,
-} from './directus.ts';
+export type { SavedData, HighlightElementData, ConfirmData, CheckFieldAccessData } from './directus.ts';
 
 export type EditConfigStrict = DirectusEditConfig;
 

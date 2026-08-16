@@ -310,12 +310,11 @@ function setContent() {
 
 <style scoped lang="scss">
 .content {
-	--focus-ring-offset: 0;
-
 	display: block;
 	flex-grow: 1;
+	block-size: 100%;
+	padding: var(--theme--form--field--input--padding) 0;
 	overflow: hidden;
-	padding-block: calc(2 * var(--focus-ring-width)); /* leave vertical space for focus ring */
 	font-size: 0.8125rem;
 	font-family: var(--theme--fonts--monospace--font-family);
 	white-space: nowrap;
@@ -352,6 +351,7 @@ function setContent() {
 	inset-inline-start: 0.8125rem;
 	color: var(--theme--foreground-subdued);
 	transform: translateY(-50%);
+	-webkit-user-select: none;
 	user-select: none;
 	pointer-events: none;
 }

@@ -107,15 +107,17 @@
 	border-radius: var(--theme--border-radius);
 	transition: var(--fast) var(--transition);
 	transition-property: color, border-color;
+	box-shadow: var(--theme--form--field--input--box-shadow);
 }
 
 .wysiwyg:not(.disabled) .tox-tinymce:hover {
 	border-color: var(--theme--form--field--input--border-color-hover);
+	box-shadow: var(--theme--form--field--input--box-shadow-hover);
 }
 
 .wysiwyg:not(.disabled) .tox-tinymce.focus {
-	outline: var(--focus-ring-width) solid var(--theme--form--field--input--focus-ring-color);
-	outline-offset: max(-1 * var(--focus-ring-width), -1 * var(--theme--border-width));
+	border-color: var(--theme--form--field--input--border-color-focus) !important;
+	box-shadow: var(--theme--form--field--input--box-shadow-focus) !important;
 }
 
 .tox .tox-toolbar,
@@ -295,8 +297,7 @@ body.dark .tox .tox-toolbar__overflow {
 .tox .tox-textfield:focus,
 .tox .tox-selectfield select:focus,
 .tox .tox-textarea:focus {
-	outline: var(--focus-ring-width) solid var(--theme--form--field--input--focus-ring-color);
-	outline-offset: var(--focus-ring-offset-invert);
+	border-color: var(--theme--form--field--input--border-color-focus);
 }
 
 .tox .tox-button {

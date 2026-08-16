@@ -35,8 +35,6 @@ function setupFrame(overrides?: { connect?: boolean; confirm?: boolean; permitte
 				}
 			}),
 			isAiEnabled: vi.fn().mockReturnValue(false),
-			getTheme: vi.fn().mockReturnValue(null),
-			getMessages: vi.fn().mockReturnValue(null),
 		});
 
 		return this;

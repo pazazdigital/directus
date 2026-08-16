@@ -29,6 +29,7 @@ post:
   operationId: createOperation
   parameters:
     - $ref: '../../openapi.yaml#/components/parameters/Fields'
+    - $ref: '../../openapi.yaml#/components/parameters/Meta'
   requestBody:
     content:
       application/json:
@@ -61,6 +62,7 @@ patch:
   parameters:
     - $ref: '../../openapi.yaml#/components/parameters/Fields'
     - $ref: '../../openapi.yaml#/components/parameters/Limit'
+    - $ref: '../../openapi.yaml#/components/parameters/Meta'
     - $ref: '../../openapi.yaml#/components/parameters/Offset'
 
     - $ref: '../../openapi.yaml#/components/parameters/Sort'
@@ -91,6 +93,8 @@ patch:
                 type: array
                 items:
                   $ref: '../../openapi.yaml#/components/schemas/Operations'
+              meta:
+                $ref: '../../openapi.yaml#/components/schemas/x-metadata'
     '401':
       $ref: '../../openapi.yaml#/components/responses/UnauthorizedError'
 

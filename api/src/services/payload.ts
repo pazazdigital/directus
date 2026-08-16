@@ -28,7 +28,6 @@ import { getFunctions, getHelpers } from '../database/helpers/index.js';
 import getDatabase from '../database/index.js';
 import { useLogger } from '../logger/index.js';
 import { decrypt, encrypt } from '../utils/encrypt.js';
-import { extractFunctionName } from '../utils/extract-function-name.js';
 import { generateHash } from '../utils/generate-hash.js';
 import { getSecret } from '../utils/get-secret.js';
 
@@ -401,7 +400,7 @@ export class PayloadService {
 		const fn = getFunctions(this.knex, this.schema);
 
 		for (const [aliasField, originalField] of Object.entries(aliasMap)) {
-			if (extractFunctionName(originalField) !== 'json') continue;
+			if (!originalField.startsWith('json(') || !originalField.endsWith(')')) continue;
 
 			for (const payload of payloads) {
 				payload[aliasField] = fn.parseJsonResult(payload[aliasField]);

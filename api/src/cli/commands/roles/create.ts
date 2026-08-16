@@ -1,5 +1,4 @@
 import getDatabase from '../../../database/index.js';
-import { getLicenseManager } from '../../../license/index.js';
 import { useLogger } from '../../../logger/index.js';
 import { PoliciesService } from '../../../services/index.js';
 import { AccessService } from '../../../services/index.js';
@@ -22,9 +21,6 @@ export default async function rolesCreate({
 		logger.error('Name is required');
 		process.exit(1);
 	}
-
-	// Ensure we enforce license limits for user create
-	await getLicenseManager().initialize();
 
 	try {
 		const schema = await getSchema();

@@ -17,5 +17,3 @@ fields:
     width: half
   - field: next_token
     width: half
-  - field: oauth_client
-    width: half

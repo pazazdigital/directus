@@ -1,50 +1,41 @@
-import { VERSION_KEY_DRAFT } from '@directus/constants';
 import type { ContentVersion, Filter, Item, PrimaryKey } from '@directus/types';
 import { useRouteQuery } from '@vueuse/router';
-import { isEqual } from 'lodash';
 import { computed, ref, type Ref, watch } from 'vue';
-import { useCollectionPermissions } from './use-permissions';
+import { useCollectionPermissions, usePermissions } from './use-permissions';
 import api from '@/api';
+import { useNestedValidation } from '@/composables/use-nested-validation';
 import { VALIDATION_TYPES } from '@/constants';
+import { DRAFT_VERSION_KEY } from '@/constants';
 import { APIError } from '@/types/error';
 import type { ContentVersionMaybeNew, ContentVersionWithType, NewContentVersion } from '@/types/versions';
+import { getDefaultValuesFromFields } from '@/utils/get-default-values-from-fields';
+import { mergeItemData } from '@/utils/merge-item-data';
+import { pushGroupOptionsDown } from '@/utils/push-group-options-down';
 import { unexpectedError } from '@/utils/unexpected-error';
+import { validateItem } from '@/utils/validate-item';
 
-export interface PublishVersionOptions {
-	mainHash?: string;
-	fields?: string[];
-}
-
-export function useVersions(collection: Ref<string>, isSingleton: Ref<boolean>, primaryKey: Ref<PrimaryKey | null>) {
+export function useVersions(collection: Ref<string>, isSingleton: Ref<boolean>, primaryKey: Ref<string | null>) {
 	const currentVersion = ref<ContentVersionMaybeNew | null>(null);
 	const rawVersions = ref<ContentVersion[] | null>(null);
-	const deleteVersionLoading = ref(false);
-	const publishVersionLoading = ref(false);
+	const loading = ref(false);
+	const saveVersionLoading = ref(false);
 	const validationErrors = ref<any[]>([]);
 
 	const { createAllowed: createVersionsAllowed, readAllowed: readVersionsAllowed } =
 		useCollectionPermissions('directus_versions');
-
-	const queryVersionId = useRouteQuery<PrimaryKey | null>('versionId', null, {
-		transform: (value) => (Array.isArray(value) ? value[0] : value),
-		mode: 'push',
-	});
 
 	const queryVersion = useRouteQuery<string | null>('version', null, {
 		transform: (value) => (Array.isArray(value) ? value[0] : value),
 		mode: 'push',
 	});
 
-	const isNewItem = computed(() => primaryKey.value === '+');
-
-	const isItemlessVersion = computed(() => {
-		const version = currentVersion.value;
-		if (!version || version.id === '+') return false;
-		return (version as ContentVersionWithType).item === null;
-	});
+	const permissions = usePermissions(collection, primaryKey, false);
+	const fieldsWithPermissions = permissions.itemPermissions.fields;
+	const { nestedValidationErrors } = useNestedValidation();
+	const defaultValues = getDefaultValuesFromFields(fieldsWithPermissions);
 
 	const versions = computed<ContentVersionMaybeNew[]>(() => {
-		const draftVersion = getGlobalVersion(VERSION_KEY_DRAFT);
+		const draftVersion = getGlobalVersion(DRAFT_VERSION_KEY);
 		const localVersions = rawVersions.value?.filter(versionNotInGlobals)?.map(versionAddLocalType) ?? [];
 
 		return [draftVersion, ...localVersions];
@@ -61,7 +52,7 @@ export function useVersions(collection: Ref<string>, isSingleton: Ref<boolean>, 
 		}
 
 		function versionNotInGlobals(version: ContentVersion) {
-			return version.key !== VERSION_KEY_DRAFT;
+			return version.key !== DRAFT_VERSION_KEY;
 		}
 
 		function versionAddLocalType(version: ContentVersion): ContentVersionWithType {
@@ -76,15 +67,9 @@ export function useVersions(collection: Ref<string>, isSingleton: Ref<boolean>, 
 
 			const previouslySelectedKey = currentVersion.value?.key;
 
-			const newSelected = newQueryVersion
+			currentVersion.value = newQueryVersion
 				? (newVersions.find((version) => version.key === newQueryVersion && isVersionSelectable(version)) ?? null)
 				: null;
-
-			if (newSelected && currentVersion.value && newSelected.id === currentVersion.value.id) {
-				Object.assign(currentVersion.value, newSelected);
-			} else {
-				currentVersion.value = newSelected;
-			}
 
 			if (currentVersion.value?.key !== previouslySelectedKey) {
 				validationErrors.value = [];
@@ -95,15 +80,11 @@ export function useVersions(collection: Ref<string>, isSingleton: Ref<boolean>, 
 
 	watch(currentVersion, (newCurrentVersion) => {
 		queryVersion.value = newCurrentVersion?.key ?? null;
-
-		queryVersionId.value =
-			newCurrentVersion && isNewItem.value && newCurrentVersion.id !== '+' ? newCurrentVersion.id : null;
-
 		validationErrors.value = [];
 	});
 
 	watch(
-		[collection, isSingleton, primaryKey, queryVersionId],
+		[collection, isSingleton, primaryKey],
 		([newCollection], [oldCollection]) => {
 			if (oldCollection && newCollection !== oldCollection) currentVersion.value = null;
 			getVersions();
@@ -111,30 +92,56 @@ export function useVersions(collection: Ref<string>, isSingleton: Ref<boolean>, 
 		{ immediate: true },
 	);
 
+	return {
+		readVersionsAllowed,
+		currentVersion,
+		versions,
+		loading,
+		getVersions,
+		addVersion,
+		updateVersion,
+		deleteVersion,
+		saveVersionLoading,
+		saveVersion,
+		validationErrors,
+	};
+
+	function saveVersionErrorHandler(error: any) {
+		if (error?.response?.data?.errors) {
+			validationErrors.value = error.response.data.errors
+				.filter((err: APIError) => VALIDATION_TYPES.includes(err?.extensions?.code))
+				.map((err: APIError) => {
+					return err.extensions;
+				});
+
+			const otherErrors = error.response.data.errors.filter(
+				(err: APIError) => !VALIDATION_TYPES.includes(err?.extensions?.code),
+			);
+
+			if (otherErrors.length > 0) {
+				otherErrors.forEach(unexpectedError);
+			}
+		} else {
+			unexpectedError(error);
+		}
+
+		throw error;
+	}
+
 	async function getVersions() {
 		if (!readVersionsAllowed.value) return;
 
-		if (!isSingleton.value && !primaryKey.value) return;
+		if ((!isSingleton.value && !primaryKey.value) || primaryKey.value === '+') return;
 
-		if (isNewItem.value && !queryVersionId.value) {
-			// Drop versions carried over from a previously viewed item so the unsaved itemless version starts with no versions loaded
-			rawVersions.value = null;
-			return;
-		}
+		loading.value = true;
 
 		try {
-			const filterConditions: Filter[] = [{ collection: { _eq: collection.value } }];
-
-			if (isNewItem.value) {
-				// No parent item yet — match item-less drafts; scope to a specific version if known
-				filterConditions.push({ item: { _null: true } });
-
-				if (queryVersionId.value) filterConditions.push({ id: { _eq: queryVersionId.value } });
-			} else if (primaryKey.value) {
-				filterConditions.push({ item: { _eq: String(primaryKey.value) } });
-			}
-
-			const filter: Filter = { _and: filterConditions };
+			const filter: Filter = {
+				_and: [
+					{ collection: { _eq: collection.value } },
+					...(primaryKey.value ? [{ item: { _eq: primaryKey.value } }] : []),
+				],
+			};
 
 			const { data: response } = await api.get(`/versions`, {
 				params: {
@@ -147,6 +154,8 @@ export function useVersions(collection: Ref<string>, isSingleton: Ref<boolean>, 
 			rawVersions.value = response.data;
 		} catch (error) {
 			unexpectedError(error);
+		} finally {
+			loading.value = false;
 		}
 	}
 
@@ -168,74 +177,39 @@ export function useVersions(collection: Ref<string>, isSingleton: Ref<boolean>, 
 		}
 	}
 
-	async function deleteVersion(versionId: PrimaryKey) {
-		deleteVersionLoading.value = true;
+	function deleteVersion(deleteOnPromote = true) {
+		if (!currentVersion.value || !rawVersions.value) return;
 
-		try {
-			await api.delete(`/versions/${versionId}`);
+		const isLocalVersion = currentVersion.value?.type === 'local';
+		const currentVersionId = currentVersion.value.id;
 
-			const indexToRemove = rawVersions.value?.findIndex((v) => v.id === versionId) ?? -1;
-			if (indexToRemove !== -1) rawVersions.value?.splice(indexToRemove, 1);
-		} catch (error) {
-			unexpectedError(error);
-			throw error;
-		} finally {
-			deleteVersionLoading.value = false;
+		const index = rawVersions.value.findIndex((version) => version.id === currentVersionId);
+
+		if (index !== -1) {
+			if (isLocalVersion || deleteOnPromote) currentVersion.value = null;
+			rawVersions.value.splice(index, 1);
 		}
 	}
 
-	function versionErrorHandler(error: any, opts: { silent?: boolean } = {}) {
-		if (currentVersion.value && currentVersion.value.id !== '+' && error?.response?.status === 403) {
-			throw Object.assign(error, { versionGone: true });
-		}
+	/** @param actualPrimaryKey Resolved PK of the item — needed because for singletons the route PK is null */
+	async function saveVersion(edits: Ref<Record<string, any>>, item: Ref<Item>, actualPrimaryKey: PrimaryKey | null) {
+		if (!currentVersion.value || !actualPrimaryKey) return;
 
-		if (error?.response?.status === 422) {
-			const driftError = error.response.data?.errors?.find(
-				(err: APIError) => err?.extensions?.code === 'VERSION_HASH_MISMATCH',
-			);
-
-			if (driftError) {
-				throw Object.assign(error, {
-					versionDrift: true,
-					mainHash: driftError.extensions.mainHash as string,
-				});
-			}
-		}
-
-		if (error?.response?.data?.errors) {
-			const serverValidationErrors = error.response.data.errors
-				.filter((err: APIError) => VALIDATION_TYPES.includes(err?.extensions?.code))
-				.map((err: APIError) => err.extensions);
-
-			const existingFields = new Set(validationErrors.value.map((e: any) => e.field));
-
-			validationErrors.value = [
-				...validationErrors.value,
-				...serverValidationErrors.filter((e: any) => !existingFields.has(e.field)),
-			];
-
-			const otherErrors = error.response.data.errors.filter(
-				(err: APIError) => !VALIDATION_TYPES.includes(err?.extensions?.code),
-			);
-
-			if (otherErrors.length > 0 && !opts.silent) {
-				otherErrors.forEach(unexpectedError);
-			}
-		} else if (!opts.silent) {
-			unexpectedError(error);
-		}
-
-		throw error;
-	}
-
-	async function saveVersion(
-		edits: Ref<Record<string, any>>,
-		item: Ref<Item | null>,
-		opts?: { patchRevision?: boolean },
-	) {
-		if (!currentVersion.value || !primaryKey.value) return;
-
+		saveVersionLoading.value = true;
 		validationErrors.value = [];
+
+		const payloadToValidate = mergeItemData(defaultValues.value, item.value, edits.value);
+
+		const fields = pushGroupOptionsDown(fieldsWithPermissions.value);
+
+		const errors = validateItem(payloadToValidate, fields, false, false, currentVersion.value);
+		if (nestedValidationErrors.value?.length) errors.push(...nestedValidationErrors.value);
+
+		if (errors.length > 0) {
+			validationErrors.value = errors;
+			saveVersionLoading.value = false;
+			throw errors;
+		}
 
 		try {
 			let versionId: PrimaryKey;
@@ -246,7 +220,7 @@ export function useVersions(collection: Ref<string>, isSingleton: Ref<boolean>, 
 				} = await api.post(`/versions`, {
 					key: currentVersion.value.key,
 					collection: collection.value,
-					item: isNewItem.value ? null : String(primaryKey.value),
+					item: String(actualPrimaryKey),
 				});
 
 				versionId = version.id;
@@ -254,81 +228,25 @@ export function useVersions(collection: Ref<string>, isSingleton: Ref<boolean>, 
 				versionId = currentVersion.value.id;
 			}
 
-			// New versions have no prior revision to coalesce into
-			const shouldPatchRevision = opts?.patchRevision === true && currentVersion.value.id !== '+';
-
-			const endpoint = shouldPatchRevision
-				? `/versions/${versionId}/save?patchRevision`
-				: `/versions/${versionId}/save`;
-
-			const editsToSave = { ...edits.value };
-
 			const {
 				data: { data: savedData },
-			} = await api.post(endpoint, editsToSave);
+			} = await api.post(`/versions/${versionId}/save`, edits.value);
 
-			item.value = item.value ? Object.assign(item.value, savedData) : savedData;
-			clearSavedEditKeys(edits, editsToSave);
-
-			if (isNewItem.value) queryVersionId.value = versionId;
+			// Update local item with the saved changes
+			Object.assign(item.value, savedData);
+			edits.value = {};
 
 			await getVersions();
 
 			return savedData;
 		} catch (error) {
-			versionErrorHandler(error, { silent: true });
-		}
-	}
-
-	function clearSavedEditKeys(edits: Ref<Record<string, any>>, savedEdits: Record<string, any>) {
-		for (const key of Object.keys(savedEdits)) {
-			if (isEqual(edits.value[key], savedEdits[key])) delete edits.value[key];
-		}
-	}
-
-	async function publishVersion(
-		versionId: PrimaryKey,
-		options: PublishVersionOptions = {},
-	): Promise<PrimaryKey | null> {
-		publishVersionLoading.value = true;
-		const { mainHash, fields } = options;
-
-		try {
-			const body: Record<string, any> = {};
-			if (mainHash !== undefined) body['mainHash'] = mainHash;
-			if (fields !== undefined) body['fields'] = fields;
-
-			const {
-				data: { data: itemKey },
-			} = await api.post(`/versions/${versionId}/promote`, body);
-
-			return itemKey ?? null;
-		} catch (error) {
-			versionErrorHandler(error);
-			return null;
+			saveVersionErrorHandler(error);
 		} finally {
-			publishVersionLoading.value = false;
+			saveVersionLoading.value = false;
 		}
 	}
 
 	function isVersionSelectable(version: ContentVersionMaybeNew) {
 		return version.id === '+' ? createVersionsAllowed.value : readVersionsAllowed.value;
 	}
-
-	return {
-		readVersionsAllowed,
-		createVersionsAllowed,
-		currentVersion,
-		versions,
-		getVersions,
-		addVersion,
-		updateVersion,
-		deleteVersion,
-		deleteVersionLoading,
-		saveVersion,
-		validationErrors,
-		publishVersionLoading,
-		publishVersion,
-		isItemlessVersion,
-	};
 }

@@ -1,4 +1,3 @@
-import { VERSION_KEY_PUBLISHED } from '@directus/constants';
 import { computed } from 'vue';
 import { useSettingsStore } from '@/stores/settings';
 import { parseUrl } from '@/utils/parse-url';
@@ -14,7 +13,7 @@ export function useVisualEditorUrls() {
 	return { urlTemplates, firstResolvedUrl, resolveUrls };
 
 	function resolveUrls(version?: string | null) {
-		const $version = version ?? VERSION_KEY_PUBLISHED;
+		const $version = version ?? 'main';
 
 		return urlTemplates.value
 			.map((urlTemplate) => renderPlainStringTemplate(urlTemplate, { $version }) ?? urlTemplate)

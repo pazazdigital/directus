@@ -133,7 +133,7 @@ function sanitizeFields(rawFields: any) {
 function sanitizeSort(rawSort: any) {
 	let fields: string[] = [];
 
-	if (typeof rawSort === 'string') fields = splitFields(rawSort);
+	if (typeof rawSort === 'string') fields = rawSort.split(',');
 	else if (Array.isArray(rawSort)) fields = rawSort as string[];
 
 	fields = fields.map((field) => field.trim());
@@ -267,7 +267,7 @@ async function sanitizeDeep(deep: Record<string, any>, schema: SchemaOverview, a
 				// Collect all sub query parameters without the leading underscore
 				subQuery[key.substring(1)] = value;
 			} else if (isPlainObject(value)) {
-				await parse(value, [...path, key]);
+				parse(value, [...path, key]);
 			}
 		}
 

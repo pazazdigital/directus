@@ -5,6 +5,7 @@ import { clone } from 'lodash';
 import { computed, ref, unref } from 'vue';
 import { useRouter } from 'vue-router';
 import SettingsNavigation from '../../components/navigation.vue';
+import VBreadcrumb from '@/components/v-breadcrumb.vue';
 import VButton from '@/components/v-button.vue';
 import VCardActions from '@/components/v-card-actions.vue';
 import VCardText from '@/components/v-card-text.vue';
@@ -63,9 +64,11 @@ function discardAndLeave() {
 
 <template>
 	<PrivateView :title="$t('settings_appearance')" icon="palette">
-		<template #actions:primary>
+		<template #headline><VBreadcrumb :items="[{ name: $t('settings'), to: '/settings' }]" /></template>
+
+		<template #actions>
 			<PrivateViewHeaderBarActionButton
-				:label="$t('save')"
+				v-tooltip.bottom="$t('save')"
 				:disabled="!hasEdits"
 				:loading="saving"
 				icon="check"

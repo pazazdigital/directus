@@ -119,16 +119,6 @@ function onClick(event: MouseEvent) {
 .v-list-group {
 	margin-block-end: 0.25rem;
 
-	$this: &;
-
-	@at-root {
-		.v-list.nav {
-			#{$this} {
-				margin-block-end: 0;
-			}
-		}
-	}
-
 	&:last-child {
 		margin-block-end: 0;
 	}
@@ -151,7 +141,7 @@ function onClick(event: MouseEvent) {
 	}
 
 	.items {
-		padding-inline-start: var(--icon-size-default);
+		padding-inline-start: 1rem;
 		list-style: none;
 	}
 }

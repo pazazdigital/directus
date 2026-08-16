@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { DeepPartial, Field } from '@directus/types';
+import { Field } from '@directus/types';
+import { get } from '@directus/utils';
 import { computed } from 'vue';
 import ValueNull from './value-null.vue';
 import VErrorBoundary from '@/components/v-error-boundary.vue';
@@ -7,14 +8,13 @@ import { useExtension } from '@/composables/use-extension';
 import { useFieldsStore } from '@/stores/fields';
 import { useRelationsStore } from '@/stores/relations';
 import { getDefaultDisplayForType } from '@/utils/get-default-display-for-type';
-import { getWithArrayIndex } from '@/utils/get-with-array-index';
 import { translate } from '@/utils/translate-literal';
 
 const props = withDefaults(
 	defineProps<{
 		template: string;
 		collection?: string;
-		fields?: DeepPartial<Field>[];
+		fields?: Field[];
 		item?: Record<string, any>;
 		direction?: string;
 	}>(),
@@ -39,7 +39,7 @@ const getNestedValues = (data: any, path: string) => {
 			if (!anyCollection || anyCollection !== getM2AJunctionCollectionField(props.collection, itemField)) return;
 		}
 
-		currentData = getWithArrayIndex(currentData, part) ?? null;
+		currentData = get(currentData, part) ?? null;
 	});
 
 	return Array.isArray(currentData) ? currentData : [currentData];
@@ -76,7 +76,7 @@ const parts = computed(() =>
 			// Try getting the value from the item
 			let value = getNestedValues(props.item, fieldKey);
 
-			let field: DeepPartial<Field> | null = props.fields?.find((field) => field.field === fieldKey) ?? null;
+			let field: Field | null = props.fields?.find((field) => field.field === fieldKey) ?? null;
 
 			if (props.collection) {
 				field = fieldsStore.getField(props.collection, fieldKey);
@@ -88,7 +88,7 @@ const parts = computed(() =>
 				value = value.map(translate);
 			}
 
-			const component = field?.meta?.display || (field.type ? getDefaultDisplayForType(field.type) : null);
+			const component = field?.meta?.display || getDefaultDisplayForType(field.type);
 			const options = field?.meta?.display_options;
 
 			// No need to render the empty display overhead in this case
@@ -177,6 +177,7 @@ const parts = computed(() =>
 	block-size: 100%;
 	position: relative;
 	max-inline-size: 100%;
+	padding-inline-end: 0.4375rem;
 	@include mixins.no-wrap;
 
 	.vertical-aligner {

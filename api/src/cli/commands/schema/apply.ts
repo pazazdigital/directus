@@ -7,7 +7,6 @@ import chalk from 'chalk';
 import inquirer from 'inquirer';
 import { load as loadYaml } from 'js-yaml';
 import getDatabase, { isInstalled, validateDatabaseConnection } from '../../../database/index.js';
-import { getLicenseManager } from '../../../license/index.js';
 import { useLogger } from '../../../logger/index.js';
 import { isNestedMetaUpdate } from '../../../utils/apply-diff.js';
 import { applySnapshot } from '../../../utils/apply-snapshot.js';
@@ -212,9 +211,6 @@ export async function apply(
 				process.exit(0);
 			}
 		}
-
-		// Load the license so schema changes are checked against the active limits
-		await getLicenseManager().initialize();
 
 		await applySnapshot(snapshot, { current: currentSnapshot, diff: snapshotDiff, database });
 

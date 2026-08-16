@@ -62,15 +62,16 @@ const { theme } = useTheme(darkMode, themeLight, themeDark, {}, {});
 	background-color: var(--theme--form--field--input--background);
 	transition-duration: var(--fast);
 	transition-timing-function: var(--transition);
-	transition-property: border-color;
+	transition-property: box-shadow, border-color;
 
 	&:hover {
 		border-color: var(--theme--form--field--input--border-color-hover);
+		box-shadow: var(--theme--form--field--input--box-shadow-hover);
 	}
 
 	&:focus-within {
-		outline: var(--focus-ring-width) solid var(--theme--form--field--input--focus-ring-color);
-		outline-offset: var(--focus-ring-offset-invert);
+		border-color: var(--theme--form--field--input--border-color-focus);
+		box-shadow: var(--theme--form--field--input--box-shadow-focus);
 	}
 }
 </style>

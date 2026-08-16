@@ -35,7 +35,6 @@ export const TYPE_MAP: Record<string, EnvType> = {
 	OPENAPI_ENABLED: 'boolean',
 	GRAPHQL_INTROSPECTION: 'boolean',
 	GRAPHQL_SCHEMA_GENERATION_MAX_CONCURRENT: 'number',
-	GRAPHQL_SINGLE_USE_MUTATIONS: 'array',
 
 	MAX_BATCH_MUTATION: 'number',
 	MAX_IMPORT_ERRORS: 'number',
@@ -50,15 +49,10 @@ export const TYPE_MAP: Record<string, EnvType> = {
 	REDIS_LOCK_NAMESPACE: 'string',
 	REDIS_COUNTERS_NAMESPACE: 'string',
 	REDIS_PERMISSIONS_NAMESPACE: 'string',
-
-	HEALTHCHECK_ENABLED: 'boolean',
-	HEALTHCHECK_NAMESPACE: 'string',
-	HEALTHCHECK_SERVICES: 'array',
-	HEALTHCHECK_CACHE_TTL: 'string',
+	METRICS_HEALTH_CHECK_PREFIX: 'string',
 
 	METRICS_TOKENS: 'array',
 	METRICS_SERVICES: 'array',
-	METRICS_HEALTH_CHECK_PREFIX: 'string',
 
 	DB_SSL__CA_FILE: 'string',
 
@@ -69,23 +63,6 @@ export const TYPE_MAP: Record<string, EnvType> = {
 
 	EXTENSIONS_ROLLDOWN: 'boolean',
 
-	PROJECT_OWNER_ENABLED: 'boolean',
-
-	MCP_OAUTH_ENABLED: 'boolean',
-	MCP_OAUTH_AUTH_CODE_TTL: 'string',
-	MCP_OAUTH_MAX_CLIENTS: 'number',
-	MCP_OAUTH_CLIENT_UNUSED_TTL: 'string',
-	MCP_OAUTH_CLIENT_IDLE_TTL: 'string',
-	MCP_OAUTH_REQUIRE_RESOURCE: 'boolean',
-	MCP_OAUTH_CLEANUP_SCHEDULE: 'string',
-	MCP_OAUTH_ALLOWED_REDIRECT_DOMAINS: 'array',
-	MCP_OAUTH_ALLOWED_CUSTOM_REDIRECTS: 'array',
-	MCP_OAUTH_DCR_ENABLED: 'boolean',
-	MCP_OAUTH_CIMD_ENABLED: 'boolean',
-	MCP_OAUTH_CIMD_ALLOW_HTTP: 'boolean',
-	MCP_OAUTH_CIMD_ALLOWED_DOMAINS: 'array',
-	MCP_OAUTH_CIMD_BLOCKED_TLDS: 'array',
-
 	EMAIL_SMTP_PASSWORD: 'string',
 
 	'STORAGE_.+_SECRET': 'string',
@@ -95,8 +72,6 @@ export const TYPE_MAP: Record<string, EnvType> = {
 	'AUTH_.+_GROUP_DN': 'string',
 	'AUTH_.+_BIND_PASSWORD': 'string',
 	'AUTH_.+_COOKIE_SECURE': 'boolean',
-
-	LICENSE_KEY_MANAGEMENT_ENABLED: 'boolean',
 } as const;
 
 export const TYPE_MAP_REGEX: [RegExp, EnvType][] = Object.entries(TYPE_MAP).map(([name, value]) => [

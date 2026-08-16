@@ -4,7 +4,6 @@ import { computed, toRefs } from 'vue';
 import { useTemplateData } from '@/composables/use-template-data';
 import { useVersions } from '@/composables/use-versions';
 import { useVisualEditing } from '@/composables/use-visual-editing';
-import { getPreviewVersionKey } from '@/utils/get-preview-version-key';
 import { renderStringTemplate } from '@/utils/render-string-template';
 import LivePreview from '@/views/private/components/live-preview.vue';
 
@@ -23,7 +22,7 @@ const previewTemplate = computed(() => collectionInfo.value?.meta?.preview_url ?
 
 const { templateData: previewData } = useTemplateData(collectionInfo, primaryKey, {
 	template: previewTemplate,
-	injectData: computed(() => ({ $version: getPreviewVersionKey(currentVersion.value) })),
+	injectData: computed(() => ({ $version: currentVersion.value?.key ?? 'main' })),
 });
 
 const previewUrl = computed(() => {

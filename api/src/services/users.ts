@@ -1,5 +1,4 @@
 import { performance } from 'perf_hooks';
-import { USER_INACTIVE_LICENSE_STATUS } from '@directus/constants';
 import { useEnv } from '@directus/env';
 import { ForbiddenError, InvalidInviteError, InvalidPayloadError, RecordNotUniqueError } from '@directus/errors';
 import type {
@@ -20,9 +19,7 @@ import type { StringValue } from 'ms';
 import { clearSystemCache } from '../cache.js';
 import { DEFAULT_AUTH_PROVIDER } from '../constants.js';
 import getDatabase from '../database/index.js';
-import { getEntitlementManager } from '../license/index.js';
 import { useLogger } from '../logger/index.js';
-import { validateAccess } from '../permissions/modules/validate-access/validate-access.js';
 import { validateRemainingAdminUsers } from '../permissions/modules/validate-remaining-admin/validate-remaining-admin-users.js';
 import { createDefaultAccountability } from '../permissions/utils/create-default-accountability.js';
 import { getSecret } from '../utils/get-secret.js';
@@ -188,21 +185,6 @@ export class UsersService extends ItemsService {
 	}
 
 	/**
-	 * Block setting a non-default auth provider when the current license isn't entitled to SSO
-	 */
-	private checkProviderEntitlement(input: string | string[]): void {
-		const providers = Array.isArray(input) ? input : [input];
-
-		const hasCustomProvider = providers.some((provider) => provider && provider !== DEFAULT_AUTH_PROVIDER);
-
-		if (hasCustomProvider && !getEntitlementManager().isEntitled('sso_enabled')) {
-			throw new InvalidPayloadError({
-				reason: `Setting a custom "provider" isn't included in the current license`,
-			});
-		}
-	}
-
-	/**
 	 * Create a new user
 	 */
 	override async createOne(data: Partial<Item>, opts: MutationOptions = {}): Promise<PrimaryKey> {
@@ -214,10 +196,6 @@ export class UsersService extends ItemsService {
 
 			if ('password' in data) {
 				await this.checkPasswordPolicy([data['password']]);
-			}
-
-			if ('provider' in data) {
-				this.checkProviderEntitlement(data['provider']);
 			}
 		} catch (err: any) {
 			opts.preMutationError = err;
@@ -240,7 +218,6 @@ export class UsersService extends ItemsService {
 	override async createMany(data: Partial<Item>[], opts: MutationOptions = {}): Promise<PrimaryKey[]> {
 		const emails = data.map((payload) => payload['email']).filter((email) => email);
 		const passwords = data.map((payload) => payload['password']).filter((password) => password);
-		const providers = data.map((payload) => payload['provider']).filter((provider) => provider);
 		const someActive = data.some((payload) => !('status' in payload) || payload['status'] === 'active');
 
 		try {
@@ -251,10 +228,6 @@ export class UsersService extends ItemsService {
 
 			if (passwords.length) {
 				await this.checkPasswordPolicy(passwords);
-			}
-
-			if (providers.length) {
-				this.checkProviderEntitlement(providers);
 			}
 		} catch (err: any) {
 			opts.preMutationError = err;
@@ -314,8 +287,6 @@ export class UsersService extends ItemsService {
 					throw new InvalidPayloadError({ reason: `You can't change the "provider" value manually` });
 				}
 
-				this.checkProviderEntitlement(data['provider']);
-
 				data['auth_data'] = null;
 			}
 
@@ -340,8 +311,7 @@ export class UsersService extends ItemsService {
 				opts.userIntegrityCheckFlags =
 					(opts.userIntegrityCheckFlags ?? UserIntegrityCheckFlag.None) | UserIntegrityCheckFlag.UserLimits;
 			} else {
-				opts.userIntegrityCheckFlags =
-					(opts.userIntegrityCheckFlags ?? UserIntegrityCheckFlag.None) | UserIntegrityCheckFlag.RemainingAdmins;
+				opts.userIntegrityCheckFlags = UserIntegrityCheckFlag.All;
 			}
 		}
 
@@ -369,18 +339,6 @@ export class UsersService extends ItemsService {
 	 * Delete multiple users by primary key
 	 */
 	override async deleteMany(keys: PrimaryKey[], opts: MutationOptions = {}): Promise<PrimaryKey[]> {
-		if (this.accountability) {
-			await validateAccess(
-				{
-					collection: 'directus_users',
-					action: 'delete',
-					accountability: this.accountability,
-					primaryKeys: keys,
-				},
-				{ knex: this.knex, schema: this.schema },
-			);
-		}
-
 		if (opts?.onRequireUserIntegrityCheck) {
 			opts.onRequireUserIntegrityCheck(opts?.userIntegrityCheckFlags ?? UserIntegrityCheckFlag.None);
 		} else {
@@ -398,9 +356,6 @@ export class UsersService extends ItemsService {
 
 		await super.deleteMany(keys, opts);
 		await this.clearUserSessions(keys);
-
-		// `super.deleteMany` doesn't set integrity flags, so clear explicitly.
-		await getEntitlementManager().clearCache('seats', 'sso_enabled');
 
 		return keys;
 	}
@@ -479,10 +434,7 @@ export class UsersService extends ItemsService {
 			schema: this.schema,
 		});
 
-		const { allowed: isWithinLicenseLimits } = await getEntitlementManager().check('seats');
-		const status = isWithinLicenseLimits ? 'active' : USER_INACTIVE_LICENSE_STATUS;
-
-		await service.updateOne(user.id, { password, status });
+		await service.updateOne(user.id, { password, status: 'active' });
 	}
 
 	async registerUser(input: RegisterUserInput) {
@@ -551,7 +503,7 @@ export class UsersService extends ItemsService {
 			const mailService = new MailService(serviceOptions);
 			const payload = { email: input.email, scope: 'pending-registration' };
 
-			const token = jwt.sign(payload, getSecret(), {
+			const token = jwt.sign(payload, env['SECRET'] as string, {
 				expiresIn: env['EMAIL_VERIFICATION_TOKEN_TTL'] as StringValue | number,
 				issuer: 'directus',
 			});
@@ -587,7 +539,7 @@ export class UsersService extends ItemsService {
 	}
 
 	async verifyRegistration(token: string): Promise<string> {
-		const { email, scope } = verifyJWT(token, getSecret()) as {
+		const { email, scope } = verifyJWT(token, env['SECRET'] as string) as {
 			email: string;
 			scope: string;
 		};

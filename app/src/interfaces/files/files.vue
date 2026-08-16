@@ -442,7 +442,7 @@ const menuActive = computed(() => editModalActive.value || selectModalActive.val
 				<PrivateViewHeaderBarActionButton
 					v-if="currentlyEditing !== '+' && relationInfo.relatedCollection.collection === 'directus_files'"
 					icon="download"
-					variant="ghost"
+					secondary
 					:download="downloadName"
 					:href="downloadUrl"
 				/>

@@ -4,10 +4,7 @@ import { clearSystemCache, getCache } from '../../../cache.js';
 import { useLogger } from '../../../logger/index.js';
 import cacheClear from './clear.js';
 
-vi.mock('@directus/env', async () => {
-	const { mockEnv } = await import('../../../test-utils/env.js');
-	return mockEnv({ CACHE_STORE: 'redis', REDIS_ENABLED: false });
-});
+vi.mock('@directus/env');
 
 vi.mock('../../../cache.js', () => ({
 	clearSystemCache: vi.fn(),

@@ -1,63 +1,20 @@
-<script setup lang="ts">
-import { toRef } from 'vue';
-import { useProvideHeaderBarInline } from '../composables/use-header-bar';
-
-const props = defineProps<{
-	headerBarInline?: boolean;
-}>();
-
-useProvideHeaderBarInline(toRef(props, 'headerBarInline'));
-</script>
-
 <template>
+	<slot name="prepend" />
 	<div class="actions">
-		<div class="prepend">
-			<slot name="prepend" />
-		</div>
-
-		<div class="default">
-			<slot />
-		</div>
-
-		<div class="primary">
-			<slot name="primary" />
-		</div>
+		<slot />
 	</div>
+	<slot name="append" />
 </template>
 
-<style scoped lang="scss">
+<style scoped>
 .actions {
 	position: relative;
 	display: flex;
-	align-items: center;
-	gap: 0.625rem;
-	flex-grow: 1;
-	min-inline-size: 0;
-	justify-content: end;
-}
-
-.default {
-	position: relative;
-	display: flex;
-	align-items: center;
-	gap: 0.125rem;
-	flex-grow: 1;
-	min-inline-size: 0;
-	max-inline-size: fit-content;
-}
-
-.primary {
-	display: flex;
-	align-items: center;
-	gap: 0.625rem;
 	flex-shrink: 0;
+	gap: 0.4375rem;
 }
 
-.prepend,
-.default,
-.primary {
-	&:empty {
-		display: contents;
-	}
+.actions .v-button.secondary {
+	--v-icon-color: var(--theme--foreground);
 }
 </style>

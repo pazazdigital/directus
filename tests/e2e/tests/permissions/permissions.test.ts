@@ -261,10 +261,7 @@ test('read with fields with access to id, category', async () => {
 					} as any,
 				],
 			},
-			{
-				// @ts-ignore
-				fields: '*.*',
-			},
+			{ fields: '*.*' },
 		),
 	);
 
@@ -272,22 +269,4 @@ test('read with fields with access to id, category', async () => {
 		id: expect.anything(),
 		category: expect.anything(),
 	});
-});
-
-test('deduplicates primary keys when validating item access', async () => {
-	await api.request(
-		updatePolicy(policy.id, {
-			permissions: [
-				{
-					action: 'update',
-					collection: collections.trains,
-					fields: ['*'],
-				} as any,
-			],
-		}),
-	);
-
-	expect(
-		await userApi.request(updateItems(collections.trains, [String(train.id), String(train.id)], { name: 'Deduped' })),
-	).toBeDefined();
 });

@@ -9,6 +9,7 @@ import ExtensionListItem from '../../components/extension-list-item.vue';
 import InlineFilter from './components/inline-filter.vue';
 import api from '@/api';
 import VBanner from '@/components/v-banner.vue';
+import VBreadcrumb from '@/components/v-breadcrumb.vue';
 import VError from '@/components/v-error.vue';
 import VInfo from '@/components/v-info.vue';
 import VList from '@/components/v-list.vue';
@@ -77,6 +78,8 @@ watchEffect(async () => {
 
 <template>
 	<PrivateView :title="$t('marketplace')" icon="storefront">
+		<template #headline><VBreadcrumb :items="[{ name: $t('settings'), to: '/settings' }]" /></template>
+
 		<template #navigation>
 			<SettingsNavigation />
 		</template>

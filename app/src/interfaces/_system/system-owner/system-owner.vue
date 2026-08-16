@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import type { OwnerInformation } from '@directus/types';
 import { SetupForm as Form } from '@directus/types';
 import { computed, ref } from 'vue';
 import VDrawer from '@/components/v-drawer.vue';
 import VIcon from '@/components/v-icon/v-icon.vue';
 import VListItem from '@/components/v-list-item.vue';
-import { useSetupFields, validate } from '@/routes/setup/form';
+import { useFormFields, validate } from '@/routes/setup/form';
 import SetupForm from '@/routes/setup/form.vue';
 import { useSettingsStore } from '@/stores/settings';
 import { PrivateViewHeaderBarActionButton } from '@/views/private';
@@ -17,46 +16,31 @@ const editing = ref(false);
 const isSaving = ref(false);
 
 const form = ref<Partial<Form>>({});
-const fields = useSetupFields(false);
+const fields = useFormFields(false, form);
 
-const initialValues = computed<Partial<Form>>(() => ({
-	owner: {
-		project_owner: settingsStore.settings?.project_owner ?? null,
-		project_usage: settingsStore.settings?.project_usage ?? null,
-		org_name: settingsStore.settings?.org_name ?? null,
-		product_updates: settingsStore.settings?.product_updates ?? false,
-	},
+const isSaveAllowed = computed(
+	() =>
+		form.value.project_owner ||
+		form.value.project_usage ||
+		('product_updates' in form.value && form.value.product_updates !== initialValues.value.product_updates),
+);
+
+const initialValues = computed(() => ({
+	project_owner: settingsStore.settings?.project_owner,
+	project_usage: settingsStore.settings?.project_usage,
+	org_name: settingsStore.settings?.org_name,
+	product_updates: settingsStore.settings?.product_updates,
 }));
 
-const isSaveAllowed = computed(() => {
-	const owner = form.value.owner;
-	if (!owner) return false;
-
-	const initialOwner = initialValues.value.owner;
-
-	return (
-		(owner.project_owner !== undefined && owner.project_owner !== initialOwner?.project_owner) ||
-		(owner.project_usage !== undefined && owner.project_usage !== initialOwner?.project_usage) ||
-		(owner.org_name !== undefined && owner.org_name !== initialOwner?.org_name) ||
-		(owner.product_updates !== undefined && owner.product_updates !== initialOwner?.product_updates)
-	);
-});
-
 async function save() {
-	const owner: OwnerInformation = {
-		project_owner: initialValues.value.owner?.project_owner ?? null,
-		project_usage: initialValues.value.owner?.project_usage ?? null,
-		org_name: initialValues.value.owner?.org_name ?? null,
-		product_updates: initialValues.value.owner?.product_updates ?? false,
-		...form.value.owner,
-	};
+	const value = { ...initialValues.value, ...form.value };
 
-	errors.value = validate({ project_owner: owner.project_owner }, fields);
+	errors.value = validate(value, fields);
 
 	if (errors.value.length > 0) return;
 
 	isSaving.value = true;
-	await settingsStore.setOwner(owner);
+	await settingsStore.setOwner(value as Form);
 	await settingsStore.hydrate();
 	reset();
 	isSaving.value = false;
@@ -72,7 +56,7 @@ async function reset() {
 <template>
 	<div class="system-owner">
 		<VListItem type="text" block clickable @click="editing = true">
-			{{ form.owner?.project_owner ?? initialValues.owner?.project_owner }}
+			{{ form.project_owner ?? initialValues.project_owner }}
 			<div class="spacer" />
 			<div class="item-actions">
 				<VIcon v-tooltip="$t('interfaces.system-owner.edit')" name="edit" clickable />
@@ -81,9 +65,9 @@ async function reset() {
 	</div>
 
 	<VDrawer v-model="editing" :title="$t('interfaces.system-owner.update')" icon="link" @cancel="reset" @apply="save">
-		<template #actions:primary>
+		<template #actions>
 			<PrivateViewHeaderBarActionButton
-				:label="$t('save')"
+				v-tooltip.bottom="$t('save')"
 				:disabled="!isSaveAllowed"
 				:loading="isSaving"
 				icon="check"
